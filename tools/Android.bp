@@ -1,0 +1,22 @@
+sh_binary {
+    name: "collect-diagnostics",
+    src: "collect-diagnostics.sh",
+    system_ext_specific: true,
+}
+
+sh_binary {
+    name: "collect-diagnostics-service",
+    src: "collect-diagnostics-service.sh",
+    system_ext_specific: true,
+    required: [
+        "collect-diagnostics",
+        "collect_diagnostics.rc",
+    ],
+}
+
+prebuilt_etc {
+    name: "collect_diagnostics.rc",
+    src: "collect_diagnostics.rc",
+    sub_dir: "init",
+    system_ext_specific: true,
+}

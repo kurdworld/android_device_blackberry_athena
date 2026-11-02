@@ -17,8 +17,6 @@ import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.SeekBarPreference;
 import androidx.preference.SwitchPreference;
 
-import java.io.File;
-
 public class DeviceSettingsActivity extends CollapsingToolbarBaseActivity {
 
     @Override
@@ -36,66 +34,44 @@ public class DeviceSettingsActivity extends CollapsingToolbarBaseActivity {
     public static class DeviceSettingsFragment extends PreferenceFragmentCompat
             implements Preference.OnPreferenceChangeListener {
 
-        private static final String KEY_KEYBOARD_TOUCHPAD_ENABLED =
-                "keyboard_touchpad_enabled";
-        private static final String PROP_KEYBOARD_TOUCHPAD_POWER_DISABLED =
+        private static final String KEY_TOUCHPAD = "keyboard_touchpad_enabled";
+        // Read by init, which writes it to the touch_keypad turn_off node
+        private static final String PROP_TOUCHPAD_DISABLED =
                 "persist.vendor.touchkeypad.disabled";
-        private static final String KEY_PIN_INPUT =
-                "keyboard_pin_input";
-        private static final String KEY_SHOW_IME =
-                "show_ime_with_hard_keyboard";
-        private static final String KEY_IME_SWITCHER =
-                "ime_switcher_shortcut";
-        private static final String KEY_ADPT_KEYBOARD_BRIGHTNESS =
-                "keyboard_adaptive_brightness";
-        private static final String KEY_KEYBOARD_HIGH_BRIGHTNESS_OFF =
-                "keyboard_backlight_high_brightness_off";
-        private static final String KEY_KEYBOARD_BRIGHTNESS =
-                "keyboard_brightness";
-        private static final String KEY_KEYBOARD_TIMEOUT =
-                "keyboard_backlight_timeout";
-        private static final String KEY_KEYBOARD_ONLY_PRESSED =
-                "keyboard_backlight_only_when_pressed";
-        private static final String KEY_KEYBOARD_ON_TOUCH =
-                "keyboard_backlight_on_touch";
-        private static final String KEY_ADPT_BUTTON_BRIGHTNESS =
-                "button_adaptive_brightness";
-        private static final String KEY_BUTTON_BRIGHTNESS =
-                "button_brightness";
-        private static final String KEY_BUTTON_TIMEOUT =
-                "button_backlight_timeout";
-        private static final String KEY_BUTTON_ONLY_PRESSED =
-                "button_only_when_pressed";
-        private static final String KEY_BUTTON_ON_KEYBOARD_TOUCH =
-                "button_backlight_on_keyboard_touch";
-        private static final String KEY_HOST_DT2W =
-                "host_dt2w_enable";
-        private static final String PROP_HOST_DT2W =
-                "persist.vendor.focaltech.host_dt2w";
-        private static final String SYSFS_HOST_DT2W =
-                "/sys/devices/virtual/tp_device/tp_gesture/host_dt2w_enable";
-        private static final String KEY_TOUCHSCREEN_CATEGORY =
-                "touchscreen_category";
+        private static final String KEY_SCROLLING = "keyboard_scrolling_enabled";
+        // Read by ViewRootImpl in app processes
+        private static final String PROP_SCROLLING_DISABLED =
+                "persist.vendor.touchkeypad.scrolling_disabled";
+        private static final String KEY_PIN_INPUT = "keyboard_pin_input";
+        private static final String KEY_SHOW_IME = "show_ime_with_hard_keyboard";
+        private static final String KEY_IME_SWITCHER = "ime_switcher_shortcut";
+        private static final String KEY_KEYBOARD_BRIGHTNESS = "keyboard_brightness";
+        private static final String KEY_BUTTON_BRIGHTNESS = "button_brightness";
+        private static final String KEY_BUTTON_TIMEOUT = "button_timeout";
 
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             setPreferencesFromResource(R.xml.device_settings, rootKey);
 
-            // Keyboard touchpad power
-            SwitchPreference touchpadEnabled =
-                    findPreference(KEY_KEYBOARD_TOUCHPAD_ENABLED);
-            if (touchpadEnabled != null) {
-                touchpadEnabled.setChecked(!SystemProperties.getBoolean(
-                        PROP_KEYBOARD_TOUCHPAD_POWER_DISABLED, false));
-                touchpadEnabled.setOnPreferenceChangeListener(this);
+            // Keyboard touchpad (scroll/swipe gestures)
+            SwitchPreference touchpad = findPreference(KEY_TOUCHPAD);
+            if (touchpad != null) {
+                touchpad.setChecked(!SystemProperties.getBoolean(PROP_TOUCHPAD_DISABLED, false));
+                touchpad.setOnPreferenceChangeListener(this);
+            }
+
+            // Keyboard scrolling
+            SwitchPreference scrolling = findPreference(KEY_SCROLLING);
+            if (scrolling != null) {
+                scrolling.setChecked(!SystemProperties.getBoolean(PROP_SCROLLING_DISABLED, false));
+                scrolling.setOnPreferenceChangeListener(this);
             }
 
             // Lockscreen PIN with keyboard
             SwitchPreference pinInput = findPreference(KEY_PIN_INPUT);
             if (pinInput != null) {
                 int current = Settings.Secure.getInt(
-                        getContext().getContentResolver(),
-                        "keyboard_pin_input", 1);
+                        getContext().getContentResolver(), KEY_PIN_INPUT, 1);
                 pinInput.setChecked(current == 1);
                 pinInput.setOnPreferenceChangeListener(this);
             }
@@ -121,30 +97,6 @@ public class DeviceSettingsActivity extends CollapsingToolbarBaseActivity {
                 imeSwitcher.setOnPreferenceChangeListener(this);
             }
 
-            // Adaptive keyboard brightness
-            SwitchPreference kbdAdptBright = findPreference(KEY_ADPT_KEYBOARD_BRIGHTNESS);
-            if (kbdAdptBright != null) {
-                int current = Settings.Secure.getInt(
-                        getContext().getContentResolver(),
-                        "keyboard_adaptive_brightness", 1);
-                kbdAdptBright.setChecked(current == 1);
-                kbdAdptBright.setOnPreferenceChangeListener(this);
-            }
-
-            // Independent high-screen-brightness cutoff
-            SwitchPreference kbdHighBrightnessOff =
-                    findPreference(KEY_KEYBOARD_HIGH_BRIGHTNESS_OFF);
-            if (kbdHighBrightnessOff != null) {
-                int legacyAdaptive = Settings.Secure.getInt(
-                        getContext().getContentResolver(),
-                        KEY_ADPT_KEYBOARD_BRIGHTNESS, 1);
-                int current = Settings.Secure.getInt(
-                        getContext().getContentResolver(),
-                        KEY_KEYBOARD_HIGH_BRIGHTNESS_OFF, legacyAdaptive);
-                kbdHighBrightnessOff.setChecked(current == 1);
-                kbdHighBrightnessOff.setOnPreferenceChangeListener(this);
-            }
-
             // Keyboard brightness (0.0 - 1.0 stored, 0-100 displayed)
             SeekBarPreference kbdBright = findPreference(KEY_KEYBOARD_BRIGHTNESS);
             if (kbdBright != null) {
@@ -153,49 +105,6 @@ public class DeviceSettingsActivity extends CollapsingToolbarBaseActivity {
                         "keyboard_brightness", -1.0f);
                 kbdBright.setValue(current >= 0 ? Math.round(current * 100) : 100);
                 kbdBright.setOnPreferenceChangeListener(this);
-            }
-
-            // Keyboard backlight timeout
-            ListPreference kbdTimeout = findPreference(KEY_KEYBOARD_TIMEOUT);
-            if (kbdTimeout != null) {
-                int current = Settings.Secure.getInt(
-                        getContext().getContentResolver(),
-                        "keyboard_backlight_timeout", 10000);
-                kbdTimeout.setValue(String.valueOf(current));
-                kbdTimeout.setSummary(kbdTimeout.getEntry());
-                kbdTimeout.setOnPreferenceChangeListener(this);
-            }
-
-            // Keyboard backlight only when pressed
-            SwitchPreference kbdPressed = findPreference(KEY_KEYBOARD_ONLY_PRESSED);
-            if (kbdPressed != null) {
-                int current = Settings.Secure.getInt(
-                        getContext().getContentResolver(),
-                        "keyboard_backlight_only_when_pressed", 0);
-                kbdPressed.setChecked(current == 1);
-                kbdPressed.setOnPreferenceChangeListener(this);
-            }
-
-            // Keyboard backlight also when touched
-            SwitchPreference kbdOnTouch = findPreference(KEY_KEYBOARD_ON_TOUCH);
-            if (kbdOnTouch != null) {
-                int current = Settings.Secure.getInt(
-                        getContext().getContentResolver(),
-                        "keyboard_backlight_on_touch", 0);
-                final boolean onlyWhenPressed =
-                        kbdPressed != null && kbdPressed.isChecked();
-                kbdOnTouch.setChecked(!onlyWhenPressed || current == 1);
-                kbdOnTouch.setOnPreferenceChangeListener(this);
-            }
-
-            // Adaptive button brightness
-            SwitchPreference btnAdptBright = findPreference(KEY_ADPT_BUTTON_BRIGHTNESS);
-            if (btnAdptBright != null) {
-                int current = Settings.Secure.getInt(
-                        getContext().getContentResolver(),
-                        "button_adaptive_brightness", 1);
-                btnAdptBright.setChecked(current == 1);
-                btnAdptBright.setOnPreferenceChangeListener(this);
             }
 
             // Button brightness (0.0 - 1.0 stored, 0-100 displayed)
@@ -213,65 +122,17 @@ public class DeviceSettingsActivity extends CollapsingToolbarBaseActivity {
             if (btnTimeout != null) {
                 int current = Settings.Secure.getInt(
                         getContext().getContentResolver(),
-                        "button_backlight_timeout", 10000);
+                        "button_backlight_timeout", 0);
                 btnTimeout.setValue(String.valueOf(current));
                 btnTimeout.setSummary(btnTimeout.getEntry());
                 btnTimeout.setOnPreferenceChangeListener(this);
             }
 
-            // Button only when pressed
-            SwitchPreference btnPressed = findPreference(KEY_BUTTON_ONLY_PRESSED);
-            if (btnPressed != null) {
-                int current = Settings.Secure.getInt(
-                        getContext().getContentResolver(),
-                        "button_backlight_only_when_pressed", 0);
-                btnPressed.setChecked(current == 1);
-                btnPressed.setOnPreferenceChangeListener(this);
-            }
-
-            // Navigation button backlight also when keyboard is touched
-            SwitchPreference btnOnKeyboardTouch = findPreference(KEY_BUTTON_ON_KEYBOARD_TOUCH);
-            if (btnOnKeyboardTouch != null) {
-                int current = Settings.Secure.getInt(
-                        getContext().getContentResolver(),
-                        "button_backlight_on_keyboard_touch", 0);
-                final boolean onlyWhenPressed =
-                            btnPressed != null && btnPressed.isChecked();
-                btnOnKeyboardTouch.setChecked(!onlyWhenPressed || current == 1);
-                btnOnKeyboardTouch.setOnPreferenceChangeListener(this);
-            }
-
-            // FocalTech host-side double-tap-to-wake compatibility mode
-            Preference touchscreenCategory =
-                    findPreference(KEY_TOUCHSCREEN_CATEGORY);
-            SwitchPreference hostDt2w = findPreference(KEY_HOST_DT2W);
-            if (hostDt2w != null) {
-                if (new File(SYSFS_HOST_DT2W).exists()) {
-                    hostDt2w.setChecked(SystemProperties.getBoolean(
-                            PROP_HOST_DT2W, false));
-                    hostDt2w.setOnPreferenceChangeListener(this);
-                } else if (touchscreenCategory != null) {
-                    // Hide this FocalTech-only category on other panels.
-                    getPreferenceScreen().removePreference(touchscreenCategory);
-                }
-            }
-        }
-
-        private void updateOnTouchPreference(
-                String preferenceKey, boolean onlyWhenPressed) {
-            SwitchPreference onTouch = findPreference(preferenceKey);
-            if (onTouch == null) {
-                return;
-            }
-
-            final boolean savedOnTouch = Settings.Secure.getInt(
+            // Make sure stale "only when pressed" overrides don't leak through
+            // after we removed the toggle from the UI.
+            Settings.Secure.putInt(
                     getContext().getContentResolver(),
-                    preferenceKey, 0) == 1;
-
-            // Without press-only mode, keyboard touch is already treated as general
-            // user activity and therefore effectively turns the backlight on.
-            // Show that effective state without changing the saved preference.
-            onTouch.setChecked(!onlyWhenPressed || savedOnTouch);
+                    "button_backlight_only_when_pressed", 0);
         }
 
         @Override
@@ -279,29 +140,21 @@ public class DeviceSettingsActivity extends CollapsingToolbarBaseActivity {
             String key = preference.getKey();
 
             switch (key) {
-                case KEY_KEYBOARD_TOUCHPAD_ENABLED: {
+                case KEY_TOUCHPAD: {
                     boolean enabled = (boolean) newValue;
-
-                    // The persistent vendor property remains the source of truth
-                    // used by init to power the capacitive keyboard on or off.
-                    SystemProperties.set(
-                            PROP_KEYBOARD_TOUCHPAD_POWER_DISABLED,
-                            enabled ? "0" : "1");
-
-                    // Publish an observable framework setting after changing the
-                    // property. SystemUI observes this URI and then rereads the
-                    // property to update the QS tile.
-                    Settings.Global.putInt(
-                            getContext().getContentResolver(),
-                            KEY_KEYBOARD_TOUCHPAD_ENABLED,
-                            enabled ? 1 : 0);
+                    SystemProperties.set(PROP_TOUCHPAD_DISABLED, enabled ? "0" : "1");
+                    return true;
+                }
+                case KEY_SCROLLING: {
+                    boolean enabled = (boolean) newValue;
+                    SystemProperties.set(PROP_SCROLLING_DISABLED, enabled ? "0" : "1");
                     return true;
                 }
                 case KEY_PIN_INPUT: {
                     boolean checked = (boolean) newValue;
                     Settings.Secure.putInt(
                             getContext().getContentResolver(),
-                            "keyboard_pin_input",
+                            KEY_PIN_INPUT,
                             checked ? 1 : 0);
                     return true;
                 }
@@ -323,60 +176,11 @@ public class DeviceSettingsActivity extends CollapsingToolbarBaseActivity {
                     lp.setSummary(lp.getEntries()[idx]);
                     return true;
                 }
-                case KEY_ADPT_KEYBOARD_BRIGHTNESS: {
-                    boolean checked = (boolean) newValue;
-                    Settings.Secure.putInt(
-                            getContext().getContentResolver(),
-                            "keyboard_adaptive_brightness",
-                            checked ? 1 : 0);
-                    return true;
-                }
-                case KEY_KEYBOARD_HIGH_BRIGHTNESS_OFF: {
-                    return Settings.Secure.putInt(
-                            getContext().getContentResolver(),
-                            KEY_KEYBOARD_HIGH_BRIGHTNESS_OFF,
-                            (boolean) newValue ? 1 : 0);
-                }
                 case KEY_KEYBOARD_BRIGHTNESS: {
                     int percent = (int) newValue;
                     Settings.Secure.putFloat(
                             getContext().getContentResolver(),
                             "keyboard_brightness", percent / 100.0f);
-                    return true;
-                }
-                case KEY_KEYBOARD_TIMEOUT: {
-                    int value = Integer.parseInt((String) newValue);
-                    Settings.Secure.putInt(
-                            getContext().getContentResolver(),
-                            "keyboard_backlight_timeout", value);
-                    ListPreference lp = (ListPreference) preference;
-                    int idx = lp.findIndexOfValue((String) newValue);
-                    lp.setSummary(lp.getEntries()[idx]);
-                    return true;
-                }
-                case KEY_KEYBOARD_ONLY_PRESSED: {
-                    boolean checked = (boolean) newValue;
-                    Settings.Secure.putInt(
-                            getContext().getContentResolver(),
-                            "keyboard_backlight_only_when_pressed",
-                            checked ? 1 : 0);
-                    updateOnTouchPreference(KEY_KEYBOARD_ON_TOUCH, checked);
-                    return true;
-                }
-                case KEY_KEYBOARD_ON_TOUCH: {
-                    boolean checked = (boolean) newValue;
-                    Settings.Secure.putInt(
-                            getContext().getContentResolver(),
-                            "keyboard_backlight_on_touch",
-                            checked ? 1 : 0);
-                    return true;
-                }
-                case KEY_ADPT_BUTTON_BRIGHTNESS: {
-                    boolean checked = (boolean) newValue;
-                    Settings.Secure.putInt(
-                            getContext().getContentResolver(),
-                            "button_adaptive_brightness",
-                            checked ? 1 : 0);
                     return true;
                 }
                 case KEY_BUTTON_BRIGHTNESS: {
@@ -394,28 +198,6 @@ public class DeviceSettingsActivity extends CollapsingToolbarBaseActivity {
                     ListPreference lp = (ListPreference) preference;
                     int idx = lp.findIndexOfValue((String) newValue);
                     lp.setSummary(lp.getEntries()[idx]);
-                    return true;
-                }
-                case KEY_BUTTON_ONLY_PRESSED: {
-                    boolean checked = (boolean) newValue;
-                    Settings.Secure.putInt(
-                            getContext().getContentResolver(),
-                            "button_backlight_only_when_pressed",
-                            checked ? 1 : 0);
-                    updateOnTouchPreference(KEY_BUTTON_ON_KEYBOARD_TOUCH, checked);
-                    return true;
-                }
-                case KEY_BUTTON_ON_KEYBOARD_TOUCH: {
-                    boolean checked = (boolean) newValue;
-                    Settings.Secure.putInt(
-                            getContext().getContentResolver(),
-                            "button_backlight_on_keyboard_touch",
-                            checked ? 1 : 0);
-                    return true;
-                }
-                case KEY_HOST_DT2W: {
-                    boolean enabled = (boolean) newValue;
-                    SystemProperties.set(PROP_HOST_DT2W, enabled ? "1" : "0");
                     return true;
                 }
             }

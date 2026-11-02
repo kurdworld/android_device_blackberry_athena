@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <Preference
+        android:key="collect_logs_info"
+        android:summary="@string/collect_logs_info"
+        android:selectable="false" />
+
+    <Preference
+        android:key="collect_logs"
+        android:title="@string/collect_logs_title"
+        android:summary="@string/collect_logs_button_summary" />
+
+    <Preference
+        android:key="collect_logs_status"
+        android:selectable="false"
+        android:visible="false" />
+
+    <Preference
+        android:key="collect_logs_share"
+        android:title="@string/collect_logs_share"
+        android:visible="false" />
+
+</PreferenceScreen>

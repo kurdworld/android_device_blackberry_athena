@@ -41,10 +41,4 @@
         <item>21</item>
     </integer-array>
 
-    <!-- Use fourteen ring volume steps -->
-    <integer name="config_audio_ring_vol_steps">14</integer>
-    
-    <!-- Use fourteen notification volume steps -->
-    <integer name="config_audio_notif_vol_steps">14</integer>
-
 </resources>

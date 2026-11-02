@@ -1,0 +1,69 @@
+Over-the-air updates from GitHub: the Updater can download update zips from a separate address (one GitHub release per build) while reading the version file from the update repository.
+
+diff --git a/res/values/config.xml b/res/values/config.xml
+index f0d179d..0a5da38 100644
+--- a/res/values/config.xml
++++ b/res/values/config.xml
+@@ -1,6 +1,8 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <resources>
+     <string name="url" translatable="false">https://release.calyxos.org/ota/</string>
++    <!-- Optional: where update zips are downloaded from, as <url_download><incremental>/<zip> -->
++    <string name="url_download" translatable="false"></string>
+     <string name="channel_default" translatable="false">stable</string>
+     <string name="network_type_default" translatable="false">2</string>
+     <string name="battery_not_low_default" translatable="false">true</string>
+diff --git a/src/app/seamlessupdate/client/Service.java b/src/app/seamlessupdate/client/Service.java
+index 1d24050..4c24480 100644
+--- a/src/app/seamlessupdate/client/Service.java
++++ b/src/app/seamlessupdate/client/Service.java
+@@ -80,7 +80,23 @@ public class Service extends IntentService {
+     }
+ 
+     private URLConnection fetchData(final String path) throws IOException {
+-        final URL url = new URL(getString(R.string.url) + path);
++        return openConnection(getString(R.string.url) + path);
++    }
++
++    // With url_download set, each build's zip is fetched from its own folder named after the
++    // build's incremental (for example a GitHub release tagged with it), not from the metadata
++    // server.
++    private URLConnection fetchUpdate(final String androidVersion, final String targetIncremental,
++            final String file) throws IOException {
++        final String downloadUrl = getString(R.string.url_download);
++        if (downloadUrl.isEmpty()) {
++            return fetchData(DEVICE + "/" + androidVersion + "/" + file);
++        }
++        return openConnection(downloadUrl + targetIncremental + "/" + file);
++    }
++
++    private URLConnection openConnection(final String spec) throws IOException {
++        final URL url = new URL(spec);
+         final URLConnection urlConnection = url.openConnection();
+         urlConnection.setConnectTimeout(CONNECT_TIMEOUT);
+         urlConnection.setReadTimeout(READ_TIMEOUT);
+@@ -286,7 +302,7 @@ public class Service extends IntentService {
+ 
+             if (incrementalUpdate.equals(downloadFile) || fullUpdate.equals(downloadFile)) {
+                 Log.d(TAG, "resume fetch of " + downloadFile + " from " + downloaded + " bytes");
+-                final HttpURLConnection connection = (HttpURLConnection) fetchData(DEVICE + "/" + androidVersion + "/" + downloadFile);
++                final HttpURLConnection connection = (HttpURLConnection) fetchUpdate(androidVersion, targetIncremental, downloadFile);
+                 connection.setRequestProperty("Range", "bytes=" + downloaded + "-");
+                 if (connection.getResponseCode() == HTTP_RANGE_NOT_SATISFIABLE) {
+                     Log.d(TAG, "download completed previously");
+@@ -299,13 +315,13 @@ public class Service extends IntentService {
+                 try {
+                     Log.d(TAG, "fetch incremental " + incrementalUpdate);
+                     downloadFile = incrementalUpdate;
+-                    final URLConnection connection = fetchData(DEVICE + "/" + androidVersion + "/" + downloadFile);
++                    final URLConnection connection = fetchUpdate(androidVersion, targetIncremental, downloadFile);
+                     contentLength = connection.getContentLength();
+                     input = connection.getInputStream();
+                 } catch (IOException e) {
+                     Log.d(TAG, "incremental not found, fetch full update " + fullUpdate);
+                     downloadFile = fullUpdate;
+-                    final URLConnection connection = fetchData(DEVICE + "/" + androidVersion + "/" + downloadFile);
++                    final URLConnection connection = fetchUpdate(androidVersion, targetIncremental, downloadFile);
+                     contentLength = connection.getContentLength();
+                     input = connection.getInputStream();
+                 }

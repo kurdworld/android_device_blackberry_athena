@@ -1,6 +1,0 @@
-# Touch keypad power on/off toggle via property
-on property:persist.vendor.touchkeypad.disabled=1
-    write /sys/devices/touch_keypad/turn_off 1
-
-on property:persist.vendor.touchkeypad.disabled=0
-    write /sys/devices/touch_keypad/turn_off 0

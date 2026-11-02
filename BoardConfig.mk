@@ -23,9 +23,6 @@ DEVICE_PATH := device/blackberry/athena
 TARGET_CPU_VARIANT_RUNTIME := cortex-a73
 TARGET_2ND_CPU_VARIANT_RUNTIME := cortex-a73
 
-# Assertions
-TARGET_OTA_ASSERT_DEVICE := athena,bbf100
-
 # Audio
 AUDIO_FEATURE_ENABLED_FM_POWER_OPT := true
 AUDIO_FEATURE_ENABLED_GEF_SUPPORT := true
@@ -36,8 +33,12 @@ BOARD_USES_ALSA_AUDIO := true
 # Bootloader
 TARGET_BOOTLOADER_BOARD_NAME := sdm660
 
+# Recovery: keep a full recovery image in vendor (not a patch against boot), so signed
+# builds can be made and OTAs refresh the recovery partition too
+BOARD_USES_FULL_RECOVERY_IMAGE := true
+
 # Display
-TARGET_SCREEN_DENSITY := 420
+TARGET_SCREEN_DENSITY := 384
 
 # Kernel
 TARGET_KERNEL_CONFIG := athena-perf_defconfig

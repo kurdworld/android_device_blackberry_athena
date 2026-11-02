@@ -1,0 +1,16 @@
+Display HAL build: import the Qualcomm display namespaces this LineageOS repo needs in the CalyxOS tree.
+
+diff --git a/Android.bp b/Android.bp
+index c285273..c3ddf44 100644
+--- a/Android.bp
++++ b/Android.bp
+@@ -1,3 +1,9 @@
++soong_namespace {
++    imports: [
++        "vendor/qcom/opensource/commonsys-intf/display",
++        "vendor/qcom/opensource/display",
++    ],
++}
+ cc_defaults {
+     name: "display_defaults",
+     cflags: [

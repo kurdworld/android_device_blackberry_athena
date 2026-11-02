@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="device_settings_app_label">BlackBerry Settings</string>
     <string name="device_settings_title">BlackBerry settings</string>
-    <string name="device_settings_summary">Physical keyboard settings, hardware configuration, legacy BlackBerry apps</string>
+    <string name="device_settings_summary">Keyboard shortcuts and backlight settings</string>
 
-    <string name="keyboard_category">Keyboard</string>
+    <string name="tile_on">On</string>
+    <string name="tile_off">Off</string>
 
-    <string name="keyboard_touchpad_enabled_title">Enable keyboard touchpad</string>
-    <string name="keyboard_touchpad_enabled_summary">Power the capacitive keyboard touchpad for scrolling, gestures, and backlight activation</string>
+    <string name="keyboard_touchpad_enabled_title">Keyboard touchpad</string>
+    <string name="keyboard_touchpad_enabled_summary">Scroll and swipe on the keyboard. Turn off if it interferes with typing</string>
+
+    <string name="keyboard_scrolling_enabled_title">Keyboard scrolling</string>
+    <string name="keyboard_scrolling_enabled_summary">Swipe on the keyboard to scroll. Turn off to keep the touchpad but stop it scrolling</string>
 
     <string name="keyboard_pin_input_title">Keyboard PIN input</string>
     <string name="keyboard_pin_input_summary">Type lockscreen PIN using physical keyboard</string>
-
     <string name="show_ime_title">Allow on-screen keyboard</string>
     <string name="show_ime_summary">Show virtual keyboard even when hardware keyboard is connected</string>
 
@@ -23,53 +25,31 @@
     <string name="ime_shortcut_ctrl">Ctrl key</string>
     <string name="ime_shortcut_sym">SYM key</string>
 
-    <string name="keyboard_backlight_category">Keyboard backlight</string>
-    <string name="keyboard_adaptive_brightness_title">Keyboard adaptive brightness</string>
-    <string name="keyboard_adaptive_brightness_summary">Keyboard backlight scales with screen brightness</string>
-    <string name="keyboard_high_brightness_off_title">Turn off with bright screen</string>
-    <string name="keyboard_high_brightness_off_summary">Turn off keyboard backlight at high screen brightness for power saving in daylight</string>
+    <string name="backlight_category">Backlight</string>
     <string name="keyboard_brightness_title">Keyboard brightness</string>
     <string name="keyboard_brightness_summary">Brightness level for keyboard backlight</string>
-    <string name="keyboard_backlight_timeout_title">Keyboard backlight timeout</string>
-    <string name="keyboard_backlight_timeout_summary">Time before keyboard backlight turns off</string>
-    <string name="keyboard_only_when_pressed_title">Only light on press</string>
-    <string name="keyboard_only_when_pressed_summary">Keyboard backlight only turns on with key press</string>
-    <string name="keyboard_on_touch_title">Light on keyboard touch</string>
-    <string name="keyboard_on_touch_summary">Keyboard backlight also turns on with keyboard touch (requires keyboard touchpad enabled)</string>
-
-    <string name="button_backlight_category">Button backlight</string>
-    <string name="button_adaptive_brightness_title">Button adaptive brightness</string>
-    <string name="button_adaptive_brightness_summary">Navigation button backlight scales with screen brightness</string>
     <string name="button_brightness_title">Button brightness</string>
     <string name="button_brightness_summary">Brightness level for navigation buttons</string>
-    <string name="button_backlight_timeout_title">Button backlight timeout</string>
-    <string name="button_backlight_timeout_summary">Time before button backlight turns off</string>
-    <string name="button_only_when_pressed_title">Only light on press</string>
-    <string name="button_only_when_pressed_summary">Button backlight only turns on when pressed</string>
-    <string name="button_on_keyboard_touch_title">Light on keyboard touch</string>
-    <string name="button_on_keyboard_touch_summary">Button backlight also turns on with keyboard touch (requires keyboard touchpad enabled)</string>
+    <string name="button_timeout_title">Keyboard and nav-buttons backlight</string>
+    <string name="button_timeout_summary">Time before keyboard and nav-buttons backlight turns off</string>
 
-    <string name="timeout_disabled">Disabled</string>
     <string name="timeout_1s">1 second</string>
     <string name="timeout_2s">2 seconds</string>
     <string name="timeout_5s">5 seconds</string>
     <string name="timeout_10s">10 seconds</string>
-    <string name="timeout_30s">30 seconds</string>
-    <string name="timeout_60s">1 minute</string>
+    <string name="timeout_always">Enabled (no timeout)</string>
 
-    <string name="touchscreen_category">Touchscreen</string>
-    <string name="host_dt2w_title">DT2W compatibility mode</string>
-    <string name="host_dt2w_summary">Alternate double-tap-to-wake detection. This may improve reliability for FocalTech touchscreens but can increase standby power.</string>
-
-    <string name="apps_category">Apps</string>
-    <string name="legacy_blackberry_apps_title">Legacy BlackBerry apps</string>
-    <string name="legacy_blackberry_apps_summary">Install original BlackBerry KEY2 apps from Google Play or Archive.org</string>
-    <string name="legacy_blackberry_apps_instructions">Tap an app to install from Google Play or Archive.org.</string>
-    <string name="blackberry_keyboard_title">BlackBerry Keyboard</string>
-    <string name="blackberry_launcher_title">BlackBerry Launcher</string>
-    <string name="app_installed">Installed</string>
-    <string name="app_not_installed">Not installed</string>
-    <string name="legacy_app_google_play_title">View on Google Play</string>
-    <string name="legacy_app_mirror_title">Install APK from Archive.org</string>
-    <string name="legacy_app_no_link_handler">Unable to open Google Play. Install or enable the Google Play Store, or use the APK download option instead.</string>
+    <string name="troubleshooting_category">Troubleshooting</string>
+    <string name="collect_logs_title">Collect logs</string>
+    <string name="collect_logs_entry_summary">Save a diagnostic report to share when reporting a problem</string>
+    <string name="collect_logs_info">Saves system logs, crash reports and device state as one file in your Download folder, to share when reporting a problem. Phone numbers, e-mail, MAC and IP addresses, card numbers, Wi-Fi names, locations and the serial number are removed. Check the file before you share it.</string>
+    <string name="collect_logs_button_summary">Takes a few minutes</string>
+    <string name="collect_logs_running">Collecting logs…</string>
+    <string name="collect_logs_running_summary">This can take a few minutes. You can leave this screen.</string>
+    <string name="collect_logs_saving">Saving to Download…</string>
+    <string name="collect_logs_failed">Couldn\'t collect logs</string>
+    <string name="collect_logs_failed_summary">Try again. If it keeps failing, restart the phone and try once more.</string>
+    <string name="collect_logs_saved">Logs saved</string>
+    <string name="collect_logs_saved_summary">Saved to Download/%1$s</string>
+    <string name="collect_logs_share">Share</string>
 </resources>

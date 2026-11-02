@@ -4,20 +4,12 @@
 
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-
-    <queries>
-        <package android:name="com.blackberry.keyboard" />
-        <package android:name="com.blackberry.blackberrylauncher" />
-    </queries>
 
     <application
-        android:label="@string/device_settings_app_label"
-        android:icon="@drawable/ic_blackberry"
+        android:label="@string/device_settings_title"
+        android:icon="@drawable/ic_keyboard"
         android:theme="@style/Theme.SubSettingsBase"
-        android:supportsRtl="true"
-        android:usesCleartextTraffic="false">
+        android:supportsRtl="true">
 
         <activity
             android:name=".DeviceSettingsActivity"
@@ -35,39 +27,45 @@
                 android:resource="@string/device_settings_summary" />
             <meta-data
                 android:name="com.android.settings.icon"
-                android:resource="@drawable/ic_blackberry" />
+                android:resource="@drawable/ic_keyboard" />
             <meta-data
                 android:name="com.android.settings.icon_tintable"
                 android:value="true" />
             <meta-data
                 android:name="com.android.settings.order"
-                android:value="-261" />
+                android:value="-256" />
             <meta-data
                 android:name="com.android.settings.profile"
                 android:value="primary_profile_only" />
         </activity>
 
+        <!-- Opened from BlackBerry settings > Troubleshooting > Collect logs -->
         <activity
-            android:name=".LegacyBlackBerryAppsActivity"
-            android:label="@string/legacy_blackberry_apps_title"
-            android:parentActivityName=".DeviceSettingsActivity"
+            android:name=".CollectLogsActivity"
+            android:label="@string/collect_logs_title"
             android:exported="false" />
 
-        <activity
-            android:name=".LegacyApkDownloadActivity"
-            android:label="@string/legacy_blackberry_apps_title"
-            android:parentActivityName=".LegacyBlackBerryAppsActivity"
-            android:exported="false" />
+        <service
+            android:name=".KeyboardTileService$Touchpad"
+            android:label="@string/keyboard_touchpad_enabled_title"
+            android:icon="@drawable/ic_keyboard"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
 
-        <provider
-            android:name=".LegacyApkFileProvider"
-            android:authorities="com.blackberry.settings.legacyapks"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/legacy_apk_paths" />
-        </provider>
+        <service
+            android:name=".KeyboardTileService$Scrolling"
+            android:label="@string/keyboard_scrolling_enabled_title"
+            android:icon="@drawable/ic_keyboard"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
 
     </application>
 </manifest>

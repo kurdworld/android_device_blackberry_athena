@@ -95,13 +95,9 @@ blob_fixups: blob_fixups_user_type =        {
             b'\x00\xf0\x58\xba'),
 
     # Cams - iface_modules 0x400 frame drop bug (uses i=0 instead of bufq_idx)
-    # + bundle mask fix: prevent premature clear during partial streamoff
-    #   (0x4c6ae: cbnz r0,#skip → b.n #skip — always skip mask clear)
     'vendor/lib/libmmcamera2_iface_modules.so': blob_fixup()
         .binary_regex_replace(b'\xed\xf7\xb2\xeb\x4f\xf0\xff\x30\x05\xb0\xbd\xe8',
-                              b'\xed\xf7\xb2\xeb\x00\x20\x00\xbf\x05\xb0\xbd\xe8')
-        .binary_regex_replace(b'\x88\xbb\x0f\x99\x41\xf6\x1c\x50\x08\x58\x60\xbb',
-                              b'\x31\xe0\x0f\x99\x41\xf6\x1c\x50\x08\x58\x60\xbb'),
+                              b'\xed\xf7\xb2\xeb\x00\x20\x00\xbf\x05\xb0\xbd\xe8'),
 
     ('vendor/lib/libdualcameraddm.so',
      'vendor/lib/libarcsoft_dualcam_refocus.so',

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: The CalyxOS for BlackBerry KEY2 contributors
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <!-- The version file and changelog are committed to the updates repository; each build's
+         zip is the only file in a GitHub release tagged with its build number.
+         Published with release.sh. -->
+    <string name="url" translatable="false">https://raw.githubusercontent.com/kurdworld/calyxos_updates/calyxos-8/</string>
+    <string name="url_download" translatable="false">https://github.com/kurdworld/calyxos_updates/releases/download/</string>
+    <string name="channel_default" translatable="false">stable</string>
+</resources>

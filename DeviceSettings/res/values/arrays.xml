@@ -14,23 +14,19 @@
         <item>3</item>
     </string-array>
 
-    <string-array name="backlight_timeout_entries">
-        <item>@string/timeout_disabled</item>
+    <string-array name="button_timeout_entries">
+        <item>@string/timeout_always</item>
         <item>@string/timeout_1s</item>
         <item>@string/timeout_2s</item>
         <item>@string/timeout_5s</item>
         <item>@string/timeout_10s</item>
-        <item>@string/timeout_30s</item>
-        <item>@string/timeout_60s</item>
     </string-array>
 
-    <string-array name="backlight_timeout_values">
+    <string-array name="button_timeout_values">
         <item>0</item>
         <item>1000</item>
         <item>2000</item>
         <item>5000</item>
         <item>10000</item>
-        <item>30000</item>
-        <item>60000</item>
     </string-array>
 </resources>

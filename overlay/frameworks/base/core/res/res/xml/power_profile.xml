@@ -70,50 +70,39 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
         <value>4</value> <!-- Cluster 0 has 4 cores (cpu0, cpu1, cpu2, cpu3) -->
         <value>4</value> <!-- Cluster 1 has 4 cores (cpu4, cpu5, cpu6, cpu7) -->
     </array>
-    <!-- cluster0 = A53 little (cpu0-3). Speeds match the device's
-         cpu0/cpufreq/scaling_available_frequencies exactly; note 1612800 is in
-         the DT table (sdm660.dtsi qcom,cpufreq-table-0) but is NOT exposed by
-         the clock driver, so it must not be listed here - these arrays are
-         indexed by position against the kernel's time_in_state. -->
     <array name="cpu.core_speeds.cluster0">
-        <value>633600</value> <!-- 633 MHz CPU speed -->
-        <value>902400</value> <!-- 902 MHz CPU speed -->
-        <value>1113600</value> <!-- 1113 MHz CPU speed -->
-        <value>1401600</value> <!-- 1401 MHz CPU speed -->
+        <value>614400</value> <!-- 614 MHz CPU speed -->
+        <value>883200</value> <!-- 883 MHz CPU speed -->
+        <value>1036800</value> <!-- 1036 MHz CPU speed -->
+        <value>1363200</value> <!-- 1363 MHz CPU speed -->
         <value>1536000</value> <!-- 1536 MHz CPU speed -->
-        <value>1747200</value> <!-- 1747 MHz CPU speed -->
-        <value>1843200</value> <!-- 1843 MHz CPU speed -->
+        <value>1670400</value> <!-- 1670 MHz CPU speed -->
+        <value>1804800</value> <!-- 1804 MHz CPU speed -->
     </array>
-    <!-- cluster1 = A73 big (cpu4-7). Matches cpu4 scaling_available_frequencies;
-         1804800 and 2457600 are in the DT table but not exposed. -->
     <array name="cpu.core_speeds.cluster1">
-        <value>1113600</value> <!-- 1113 MHz CPU speed -->
+        <value>633600</value> <!-- 663 MHz CPU speed -->
+        <value>902400</value> <!-- 902 MHz CPU speed -->
+        <value>1094400</value> <!-- 1094 MHz CPU speed -->
         <value>1401600</value> <!-- 1401 MHz CPU speed -->
-        <value>1747200</value> <!-- 1747 MHz CPU speed -->
-        <value>1958400</value> <!-- 1958 MHz CPU speed -->
-        <value>2150400</value> <!-- 2150 MHz CPU speed -->
-        <value>2208000</value> <!-- 2208 MHz CPU speed -->
+        <value>1555200</value> <!-- 1552 MHz CPU speed -->
+        <value>1804800</value> <!-- 1804 MHz CPU speed -->
     </array>
-    <!-- Draw figures below are the SDM660 reference values (Redmi Note 7
-         sdm660-common), which uses this identical OPP set. The previous values
-         here were keyed to frequencies this SoC does not have, so every bucket
-         was misattributed. Replace with athena-measured values when available. -->
     <array name="cpu.core_power.cluster0">
-        <value>10</value> <!-- 633 MHz CPU speed -->
-        <value>15</value> <!-- 902 MHz CPU speed -->
-        <value>20</value> <!-- 1113 MHz CPU speed -->
-        <value>30</value> <!-- 1401 MHz CPU speed -->
-        <value>35</value> <!-- 1536 MHz CPU speed -->
-        <value>45</value> <!-- 1747 MHz CPU speed -->
-        <value>52</value> <!-- 1843 MHz CPU speed -->
+        <value>8.24</value> <!-- 614 MHz CPU speed -->
+        <value>18.66</value> <!-- 883 MHz CPU speed -->
+        <value>20.2</value> <!-- 1036 MHz CPU speed -->
+        <value>28.57</value> <!-- 1363 MHz CPU speed -->
+        <value>48.57</value> <!-- 1536 MHz CPU speed -->
+        <value>51.23</value> <!-- 1670 MHz CPU speed -->
+        <value>62.6</value> <!-- 1804 MHz CPU speed -->
     </array>
     <array name="cpu.core_power.cluster1">
-        <value>53</value> <!-- 1113 MHz CPU speed -->
-        <value>83</value> <!-- 1401 MHz CPU speed -->
-        <value>129</value> <!-- 1747 MHz CPU speed -->
-        <value>174</value> <!-- 1958 MHz CPU speed -->
-        <value>196</value> <!-- 2150 MHz CPU speed -->
-        <value>222</value> <!-- 2208 MHz CPU speed -->
+        <value>10.85</value> <!-- 663 MHz CPU speed -->
+        <value>20.85</value> <!-- 902 MHz CPU speed -->
+        <value>31.57</value> <!-- 1094 MHz CPU speed -->
+        <value>50.96</value> <!-- 1401 MHz CPU speed -->
+        <value>70.31</value> <!-- 1552 MHz CPU speed -->
+        <value>100.25</value> <!-- 1804 MHz CPU speed -->
     </array>
     <!-- Additional power consumption by CPU cluster0 itself when running
     excluding cores in it -->
@@ -130,12 +119,5 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
     <item name="cpu.active">3.5</item>
     <!-- This is the battery capacity in mAh -->
     <!-- This is the battery capacity in mAh (measured at nominal voltage) -->
-    <!-- 3500 mAh design capacity, from athena's own fuel gauge profile:
-         fg-gen3-batterydata-byd-3500mah.dtsi qcom,nom-batt-capacity-mah = <3500>
-         (BYD #3300156_TCL_AthenaBYD_3500mAh), referenced via &mtp_batterydata
-         in sdm660-bbry-athena.dtsi. Do NOT use the device's
-         charge_full_design sysfs value here - qpnp-fg-gen3 returns
-         cl.nom_cap_uah from the capacity-learning block, which is the aged
-         per-unit measurement, not the design figure. -->
-    <item name="battery.capacity">3500</item>
+    <item name="battery.capacity">3060</item>
 </device>

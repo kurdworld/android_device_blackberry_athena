@@ -1,55 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <SwitchPreference
+        android:key="keyboard_touchpad_enabled"
+        android:title="@string/keyboard_touchpad_enabled_title"
+        android:summary="@string/keyboard_touchpad_enabled_summary"
+        android:persistent="false"
+        android:defaultValue="true" />
+
+    <SwitchPreference
+        android:key="keyboard_scrolling_enabled"
+        android:title="@string/keyboard_scrolling_enabled_title"
+        android:summary="@string/keyboard_scrolling_enabled_summary"
+        android:dependency="keyboard_touchpad_enabled"
+        android:persistent="false"
+        android:defaultValue="true" />
+
+    <SwitchPreference
+        android:key="keyboard_pin_input"
+        android:title="@string/keyboard_pin_input_title"
+        android:summary="@string/keyboard_pin_input_summary"
+        android:defaultValue="true" />
+
+    <SwitchPreference
+        android:key="show_ime_with_hard_keyboard"
+        android:title="@string/show_ime_title"
+        android:summary="@string/show_ime_summary"
+        android:defaultValue="true" />
+
+    <ListPreference
+        android:key="ime_switcher_shortcut"
+        android:title="@string/ime_switcher_shortcut_title"
+        android:summary="@string/ime_switcher_shortcut_summary"
+        android:entries="@array/ime_switcher_shortcut_entries"
+        android:entryValues="@array/ime_switcher_shortcut_values"
+        android:defaultValue="0" />
+
     <PreferenceCategory
-        android:key="keyboard_category"
-        android:title="@string/keyboard_category">
-
-        <SwitchPreference
-            android:key="keyboard_touchpad_enabled"
-            android:title="@string/keyboard_touchpad_enabled_title"
-            android:summary="@string/keyboard_touchpad_enabled_summary"
-            android:persistent="false"
-            android:defaultValue="true" />
-
-        <SwitchPreference
-            android:key="keyboard_pin_input"
-            android:title="@string/keyboard_pin_input_title"
-            android:summary="@string/keyboard_pin_input_summary"
-            android:defaultValue="true" />
-
-        <SwitchPreference
-            android:key="show_ime_with_hard_keyboard"
-            android:title="@string/show_ime_title"
-            android:summary="@string/show_ime_summary"
-            android:defaultValue="false" />
-
-        <ListPreference
-            android:key="ime_switcher_shortcut"
-            android:title="@string/ime_switcher_shortcut_title"
-            android:summary="@string/ime_switcher_shortcut_summary"
-            android:entries="@array/ime_switcher_shortcut_entries"
-            android:entryValues="@array/ime_switcher_shortcut_values"
-            android:defaultValue="0" />
-
-    </PreferenceCategory>
-
-    <PreferenceCategory
-        android:key="keyboard_backlight_category"
-        android:title="@string/keyboard_backlight_category">
-
-        <SwitchPreference
-            android:key="keyboard_adaptive_brightness"
-            android:title="@string/keyboard_adaptive_brightness_title"
-            android:summary="@string/keyboard_adaptive_brightness_summary"
-            android:defaultValue="true" />
-
-        <SwitchPreference
-            android:key="keyboard_backlight_high_brightness_off"
-            android:title="@string/keyboard_high_brightness_off_title"
-            android:summary="@string/keyboard_high_brightness_off_summary"
-            android:persistent="false"
-            android:defaultValue="true" />
+        android:key="backlight_category"
+        android:title="@string/backlight_category">
 
         <SeekBarPreference
             android:key="keyboard_brightness"
@@ -57,40 +46,6 @@
             android:summary="@string/keyboard_brightness_summary"
             android:max="100"
             android:defaultValue="100" />
-
-        <ListPreference
-            android:key="keyboard_backlight_timeout"
-            android:title="@string/keyboard_backlight_timeout_title"
-            android:summary="@string/keyboard_backlight_timeout_summary"
-            android:entries="@array/backlight_timeout_entries"
-            android:entryValues="@array/backlight_timeout_values"
-            android:defaultValue="10000" />
-
-        <SwitchPreference
-            android:key="keyboard_backlight_only_when_pressed"
-            android:title="@string/keyboard_only_when_pressed_title"
-            android:summary="@string/keyboard_only_when_pressed_summary"
-            android:defaultValue="false" />
-
-        <SwitchPreference
-            android:key="keyboard_backlight_on_touch"
-            android:title="@string/keyboard_on_touch_title"
-            android:summary="@string/keyboard_on_touch_summary"
-            android:dependency="keyboard_backlight_only_when_pressed"
-            android:persistent="false"
-            android:defaultValue="false" />
-
-    </PreferenceCategory>
-
-    <PreferenceCategory
-        android:key="button_backlight_category"
-        android:title="@string/button_backlight_category">
-
-        <SwitchPreference
-            android:key="button_adaptive_brightness"
-            android:title="@string/button_adaptive_brightness_title"
-            android:summary="@string/button_adaptive_brightness_summary"
-            android:defaultValue="true" />
 
         <SeekBarPreference
             android:key="button_brightness"
@@ -100,52 +55,26 @@
             android:defaultValue="100" />
 
         <ListPreference
-            android:key="button_backlight_timeout"
-            android:title="@string/button_backlight_timeout_title"
-            android:summary="@string/button_backlight_timeout_summary"
-            android:entries="@array/backlight_timeout_entries"
-            android:entryValues="@array/backlight_timeout_values"
-            android:defaultValue="10000" />
-
-        <SwitchPreference
-            android:key="button_only_when_pressed"
-            android:title="@string/button_only_when_pressed_title"
-            android:summary="@string/button_only_when_pressed_summary"
-            android:defaultValue="false" />
-
-        <SwitchPreference
-            android:key="button_backlight_on_keyboard_touch"
-            android:title="@string/button_on_keyboard_touch_title"
-            android:summary="@string/button_on_keyboard_touch_summary"
-            android:dependency="button_only_when_pressed"
-            android:persistent="false"
-            android:defaultValue="false" />
+            android:key="button_timeout"
+            android:title="@string/button_timeout_title"
+            android:summary="@string/button_timeout_summary"
+            android:entries="@array/button_timeout_entries"
+            android:entryValues="@array/button_timeout_values"
+            android:defaultValue="0" />
 
     </PreferenceCategory>
 
     <PreferenceCategory
-        android:key="touchscreen_category"
-        android:title="@string/touchscreen_category">
-
-        <SwitchPreference
-            android:key="host_dt2w_enable"
-            android:title="@string/host_dt2w_title"
-            android:summary="@string/host_dt2w_summary"
-            android:persistent="false"
-            android:defaultValue="false" />
-
-    </PreferenceCategory>
-
-    <PreferenceCategory
-        android:title="@string/apps_category">
+        android:key="troubleshooting_category"
+        android:title="@string/troubleshooting_category">
 
         <Preference
-            android:key="legacy_blackberry_apps"
-            android:title="@string/legacy_blackberry_apps_title"
-            android:summary="@string/legacy_blackberry_apps_summary">
+            android:key="collect_logs"
+            android:title="@string/collect_logs_title"
+            android:summary="@string/collect_logs_entry_summary">
             <intent
                 android:targetPackage="com.blackberry.settings"
-                android:targetClass="com.blackberry.settings.LegacyBlackBerryAppsActivity" />
+                android:targetClass="com.blackberry.settings.CollectLogsActivity" />
         </Preference>
 
     </PreferenceCategory>

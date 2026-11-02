@@ -15,6 +15,14 @@
 
 DEVICE_PATH := device/blackberry/athena
 
+# Signing keys
+
+# Make userdebug actually debuggable (LOS23 defaults to non-debuggable
+# userdebug which breaks recovery sideload). WITH_ADB_INSECURE is
+# checked by vendor/lineage/config/common.mk before it would otherwise
+# set ro.adb.secure=1 + PRODUCT_NOT_DEBUGGABLE_IN_USERDEBUG.
+WITH_ADB_INSECURE := true
+
 # Vendor blobs
 $(call inherit-product, vendor/blackberry/athena/athena-vendor.mk)
 
@@ -24,6 +32,9 @@ PRODUCT_SHIPPING_API_LEVEL := 27
 # Overlays
 DEVICE_PACKAGE_OVERLAYS += \
     $(LOCAL_PATH)/overlay
+
+PRODUCT_PACKAGES += \
+    Updater
 
 # AAPT
 PRODUCT_AAPT_CONFIG := normal
@@ -40,7 +51,16 @@ TARGET_SCREEN_WIDTH := 1080
 # Camera shims
 PRODUCT_PACKAGES += \
     libskia_shim \
-    libjnigraphics_shim
+    libjnigraphics_shim \
+    libcameracompat
+
+# Camera gralloc compat init override
+PRODUCT_COPY_FILES += \
+    device/blackberry/sdm660-common/camera/libcameracompat/init.cameracompat.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/init.cameracompat.rc
+
+# BB OREO camera HAL needs libexif (was VNDK in Android 8, removed since)
+PRODUCT_PACKAGES += \
+    libexif.vendor
 
 # Dalvik
 $(call inherit-product, frameworks/native/build/phone-xhdpi-4096-dalvik-heap.mk)
@@ -48,34 +68,27 @@ $(call inherit-product, frameworks/native/build/phone-xhdpi-4096-dalvik-heap.mk)
 # GMS
 PRODUCT_GMS_CLIENTID_BASE := android-blackberry
 
-# Lokker
-PRODUCT_PACKAGES += \
-    Lokker
-
-PRODUCT_COPY_FILES += \
-    $(DEVICE_PATH)/prebuilt/com.lokker.app.privapp-permissions.xml:$(TARGET_COPY_OUT_SYSTEM_EXT)/etc/permissions/com.lokker.app.privapp-permissions.xml
-
-# K12KB keyboard app
-PRODUCT_PACKAGES += \
-    K12KB
-
-# Touchkeypad
-PRODUCT_COPY_FILES += \
-    $(DEVICE_PATH)/init/init.athena.touchkeypad.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/init.athena.touchkeypad.rc \
-    $(DEVICE_PATH)/init/ueventd.athena.rc:$(TARGET_COPY_OUT_VENDOR)/etc/ueventd/ueventd.athena.rc
-
-# Recovery touchscreen firmware (available without mounting vendor)
-PRODUCT_COPY_FILES += \
-    vendor/blackberry/athena/proprietary/vendor/firmware/synaptics/athena_tp.img:$(TARGET_COPY_OUT_RECOVERY)/root/system/etc/firmware/synaptics/athena_tp.img
-
-# Device settings
-PRODUCT_PACKAGES += \
-    BlackBerrySettings_athena
-
 # Goodix shims
 PRODUCT_PACKAGES += \
     libbinder_shim.vendor \
     libfakelogprint
+
+# APNs: full_base_telephony.mk skips the AOSP list when CALYX_BUILD is set,
+# which leaves the telephony database empty and mobile data unusable
+PRODUCT_COPY_FILES += \
+    device/sample/etc/apns-full-conf.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/apns-conf.xml
+
+# Touch Keypad - source not available for LOS23
+#PRODUCT_PACKAGES += \
+#    vendor.blackberry.touchkeypad-service
+
+# BlackBerry settings
+PRODUCT_PACKAGES += \
+    DeviceSettings
+
+# Collect logs (BlackBerry settings > Troubleshooting)
+PRODUCT_PACKAGES += \
+    collect-diagnostics-service
 
 # Inherit from BlackBerry sdm660-common
 $(call inherit-product, device/blackberry/sdm660-common/common.mk)

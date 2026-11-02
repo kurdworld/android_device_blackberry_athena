@@ -14,20 +14,14 @@ $(call inherit-product, device/blackberry/athena/device.mk)
 # Inherit some common Lineage stuff.
 $(call inherit-product, vendor/lineage/config/common_full_phone.mk)
 
-PRODUCT_BRAND := blackberry
+PRODUCT_BRAND := BlackBerry
 PRODUCT_DEVICE := athena
-PRODUCT_MANUFACTURER := BlackBerry
-PRODUCT_MODEL := KEY2
+PRODUCT_MANUFACTURER := TCL Technology
+PRODUCT_MODEL := BlackBerry KEY2
 PRODUCT_NAME := lineage_athena
 
 # need to keep old FPs from oreo for play certification
 PRODUCT_BUILD_PROP_OVERRIDES += \
     BuildDesc="bbf100dsglobal 8 OPM1.171019.026 ACQ160 release-keys" \
     BuildFingerprint=blackberry/bbf100dsglobal/bbf100:8.1.0/OPM1.171019.026/ACQ160:user/release-keys \
-    DeviceProduct=bbf100dsglobal \
-    DeviceName=bbf100 \
-    SystemDevice=bbf100
-
-# OTA Updater
-PRODUCT_PROPERTY_OVERRIDES += \
-    lineage.updater.uri=https://raw.githubusercontent.com/Lineage-BBKey2/distribution/main/{device}-4p19.json
+    DeviceProduct=bbf100dsglobal

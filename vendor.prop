@@ -1,5 +1,5 @@
 # Audio
-debug.ftm.mixerpath=/vendor/etc/mixer_paths_bbf100.xml
+debug.ftm.mixerpath=/vendor/etc/mixer_paths_bbe100.xml
 
 # Bluetooth
 bluetooth.device.default_name=BlackBerry KEY2

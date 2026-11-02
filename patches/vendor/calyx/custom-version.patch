@@ -1,0 +1,14 @@
+diff --git a/config/version.mk b/config/version.mk
+index a05cd31..03d01f3 100644
+--- a/config/version.mk
++++ b/config/version.mk
+@@ -9,6 +9,9 @@ ifneq ($(OFFICIAL_BUILD),true)
+ CALYXOS_VERSION := $(CALYXOS_VERSION)-UNOFFICIAL
+ endif
+ 
++# BlackBerry KEY2 port: label kept in the device tree, bumped by build-and-release.sh
++CALYXOS_VERSION := BB-CalyxOS-$(strip $(shell cat device/blackberry/athena/custom_version.txt))-Unofficial
++
+ PRODUCT_PRODUCT_PROPERTIES += \
+     ro.calyxos.version=$(CALYXOS_VERSION)
+ 
