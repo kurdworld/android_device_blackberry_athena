@@ -3,53 +3,137 @@ layer of a letter key, so the PIN can be typed on the BlackBerry KEY2 keyboard.
 A PIN digit typed while the screen is off also wakes the device and is delivered
 to the keyguard instead of being swallowed.
 
+The "Keyboard PIN input" setting and the key character map are cached instead of
+being looked up on every key press, which made PIN entry lag.
+
 diff --git a/packages/SystemUI/src/com/android/keyguard/KeyguardPinBasedInputView.java b/packages/SystemUI/src/com/android/keyguard/KeyguardPinBasedInputView.java
-index 2bd16eaa98da..01121228e9be 100644
+index 2bd16eaa98da..dfdddec1fdda 100644
 --- a/packages/SystemUI/src/com/android/keyguard/KeyguardPinBasedInputView.java
 +++ b/packages/SystemUI/src/com/android/keyguard/KeyguardPinBasedInputView.java
-@@ -35,6 +35,7 @@ import android.animation.AnimatorSet;
+@@ -35,7 +35,10 @@ import android.animation.AnimatorSet;
  import android.animation.ValueAnimator;
  import android.content.Context;
  import android.graphics.Rect;
 +import android.provider.Settings;
  import android.util.AttributeSet;
++import android.util.SparseArray;
++import android.view.KeyCharacterMap;
  import android.view.KeyEvent;
  import android.view.View;
-@@ -137,6 +138,18 @@ public abstract class KeyguardPinBasedInputView extends KeyguardAbsKeyInputView
+ import android.view.View.AccessibilityDelegate;
+@@ -62,6 +65,11 @@ public abstract class KeyguardPinBasedInputView extends KeyguardAbsKeyInputView
+     private NumPadButton mDeleteButton;
+     private NumPadKey[] mButtons = new NumPadKey[10];
+ 
++    // Cached so that typing a PIN doesn't need a settings query per key press.
++    private boolean mKeyboardPinInputEnabled = true;
++    // Key character maps are cached per input device: loading one costs an input-manager call.
++    private final SparseArray<KeyCharacterMap> mKeyCharacterMaps = new SparseArray<>();
++
+     public KeyguardPinBasedInputView(Context context) {
+         this(context, null);
+     }
+@@ -70,6 +78,15 @@ public abstract class KeyguardPinBasedInputView extends KeyguardAbsKeyInputView
+         super(context, attrs);
+     }
+ 
++    @Override
++    protected void onAttachedToWindow() {
++        super.onAttachedToWindow();
++        // The setting can only change while the device is unlocked, so reading it when the bouncer
++        // is attached is enough; reading it per key press made PIN entry lag.
++        mKeyboardPinInputEnabled = Settings.Secure.getInt(getContext().getContentResolver(),
++                "keyboard_pin_input", 1) == 1;
++    }
++
+     @Override
+     protected boolean onRequestFocusInDescendants(int direction, Rect previouslyFocusedRect) {
+         // send focus to the password field
+@@ -137,9 +154,43 @@ public abstract class KeyguardPinBasedInputView extends KeyguardAbsKeyInputView
              performNumberClick(number);
              return true;
          }
 +        // Keyboards without a digit row (BlackBerry KEY2) print digits on the Alt layer of the
 +        // letter keys. Look the key up on that layer so the PIN can be typed without holding Alt,
-+        // unless the "Keyboard PIN input" setting is turned off.
-+        if (event != null && Settings.Secure.getInt(getContext().getContentResolver(),
-+                "keyboard_pin_input", 1) == 1) {
-+            int unicode = event.getKeyCharacterMap().get(keyCode,
-+                    KeyEvent.META_ALT_ON | KeyEvent.META_ALT_LEFT_ON);
-+            if (unicode >= '0' && unicode <= '9') {
-+                performNumberClick(unicode - '0');
-+                return true;
++        // unless the "Keyboard PIN input" setting is turned off. Only letter keys can carry a
++        // digit, and both the setting and the character map are cached: looking them up per key
++        // press cost a binder call and made PIN entry lag.
++        if (mKeyboardPinInputEnabled && keyCode >= KeyEvent.KEYCODE_A
++                && keyCode <= KeyEvent.KEYCODE_Z) {
++            final KeyCharacterMap kcm = getKeyCharacterMap(event);
++            if (kcm != null) {
++                int unicode = kcm.get(keyCode,
++                        KeyEvent.META_ALT_ON | KeyEvent.META_ALT_LEFT_ON);
++                if (unicode >= '0' && unicode <= '9') {
++                    performNumberClick(unicode - '0');
++                    return true;
++                }
 +            }
 +        }
          return super.onKeyDown(keyCode, event);
      }
  
++    private KeyCharacterMap getKeyCharacterMap(KeyEvent event) {
++        if (event == null) {
++            return null;
++        }
++        final int deviceId = event.getDeviceId();
++        KeyCharacterMap kcm = mKeyCharacterMaps.get(deviceId);
++        if (kcm == null) {
++            try {
++                kcm = event.getKeyCharacterMap();
++            } catch (KeyCharacterMap.UnavailableException e) {
++                return null;
++            }
++            mKeyCharacterMaps.put(deviceId, kcm);
++        }
++        return kcm;
++    }
++
+     @Override
+     public boolean onKeyUp(int keyCode, KeyEvent event) {
+         if (KeyEvent.isConfirmKey(keyCode)) {
 diff --git a/packages/SystemUI/src/com/android/systemui/bouncer/ui/viewmodel/BouncerOverlayContentViewModel.kt b/packages/SystemUI/src/com/android/systemui/bouncer/ui/viewmodel/BouncerOverlayContentViewModel.kt
-index fd8d7d44cb40..d7b75da634a6 100644
+index fd8d7d44cb40..f66fee6a2ead 100644
 --- a/packages/SystemUI/src/com/android/systemui/bouncer/ui/viewmodel/BouncerOverlayContentViewModel.kt
 +++ b/packages/SystemUI/src/com/android/systemui/bouncer/ui/viewmodel/BouncerOverlayContentViewModel.kt
-@@ -20,7 +20,10 @@ import android.app.admin.DevicePolicyManager
+@@ -20,7 +20,14 @@ import android.app.admin.DevicePolicyManager
  import android.app.admin.DevicePolicyResources
  import android.content.Context
  import android.graphics.Bitmap
 +import android.provider.Settings
  import android.security.Flags.enableWeaverWarmup
++import android.util.SparseArray
++import android.view.KeyCharacterMap
 +import android.view.KeyEvent.KEYCODE_0
 +import android.view.KeyEvent.KEYCODE_9
++import android.view.KeyEvent.KEYCODE_A
++import android.view.KeyEvent.KEYCODE_Z
  import androidx.compose.runtime.derivedStateOf
  import androidx.compose.runtime.getValue
  import androidx.compose.runtime.snapshotFlow
-@@ -509,10 +512,34 @@ constructor(
+@@ -100,6 +107,12 @@ constructor(
+     private val userLogoutInteractor: UserLogoutInteractor,
+     @Background private val backgroundDispatcher: CoroutineDispatcher,
+ ) : HydratedActivatable(enableEnqueuedActivations = enableWeaverWarmup()) {
++    // Refreshed in onActivated(). Reading it on every key press cost a settings query and made
++    // PIN entry lag.
++    private var keyboardPinInputEnabled = true
++    // Key character maps are cached per input device: loading one costs an input-manager call.
++    private val keyCharacterMaps = SparseArray<KeyCharacterMap>()
++
+     private val _selectedUserImage = MutableStateFlow<Bitmap?>(null)
+     val selectedUserImage: StateFlow<Bitmap?> = _selectedUserImage.asStateFlow()
+ 
+@@ -244,6 +257,7 @@ constructor(
+         get() = isFoldSplitRequired(authMethodViewModel)
+ 
+     override suspend fun onActivated(): Nothing {
++        keyboardPinInputEnabled = readKeyboardPinInputEnabled()
+         bouncerInteractor.resetScale()
+         coroutineScope {
+             launch { message.activate() }
+@@ -509,10 +523,47 @@ constructor(
       */
      fun onKeyEvent(keyEvent: KeyEvent): Boolean {
          if (keyguardMediaKeyInteractor.processMediaKeyEvent(keyEvent.nativeKeyEvent)) return true
@@ -66,12 +150,10 @@ index fd8d7d44cb40..d7b75da634a6 100644
 +    private fun pinKeyCode(event: android.view.KeyEvent): Int {
 +        val keyCode = event.keyCode
 +        if (keyCode in KEYCODE_0..KEYCODE_9) return keyCode
-+        val enabled =
-+            Settings.Secure.getInt(applicationContext.contentResolver, "keyboard_pin_input", 1) ==
-+                1
-+        if (!enabled) return keyCode
++        if (!keyboardPinInputEnabled || keyCode !in KEYCODE_A..KEYCODE_Z) return keyCode
++        val keyCharacterMap = keyCharacterMap(event) ?: return keyCode
 +        val unicode =
-+            event.keyCharacterMap.get(
++            keyCharacterMap.get(
 +                keyCode,
 +                android.view.KeyEvent.META_ALT_ON or android.view.KeyEvent.META_ALT_LEFT_ON,
 +            )
@@ -79,6 +161,21 @@ index fd8d7d44cb40..d7b75da634a6 100644
 +            KEYCODE_0 + (unicode - '0'.code)
 +        } else {
 +            keyCode
++        }
++    }
++
++    private fun readKeyboardPinInputEnabled(): Boolean =
++        Settings.Secure.getInt(applicationContext.contentResolver, "keyboard_pin_input", 1) == 1
++
++    private fun keyCharacterMap(event: android.view.KeyEvent): KeyCharacterMap? {
++        val deviceId = event.deviceId
++        keyCharacterMaps.get(deviceId)?.let {
++            return it
++        }
++        return try {
++            event.keyCharacterMap.also { keyCharacterMaps.put(deviceId, it) }
++        } catch (e: KeyCharacterMap.UnavailableException) {
++            null
 +        }
 +    }
 +

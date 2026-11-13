@@ -39,7 +39,7 @@ project folder.
 | `build/make` | `ota-non-dynamic-partitions` | Building OTA packages for the KEY2's fixed (non-dynamic) partitions |
 | `frameworks/av` | `video-surface-switch` | Video in apps like X stalling for about 2 s whenever a video moves on screen (hardware decoder surface switch) |
 | `frameworks/base` | `keyboard-pin-numeric-fields` | Setting a PIN (and dialling) on a keyboard without a digit row: numeric fields accept the digit printed on the Alt layer of a letter key, so W/E/R/S/D/F/Z/X/C type 1-9 |
-| `frameworks/base` | `keyguard-keyboard-pin` | Lock screen: the PIN bouncer accepts the same Alt-layer digits, and a PIN digit typed while the screen is off wakes the device and is delivered to the keyguard |
+| `frameworks/base` | `keyguard-keyboard-pin` | Lock screen: the PIN bouncer accepts the same Alt-layer digits, and a PIN digit typed while the screen is off wakes the device and is delivered to the keyguard. The setting and key character map are cached instead of queried on every key press, which made PIN entry lag |
 | `frameworks/hardware/interfaces` | `displayservice-hal` | Flashlight and camera (display service interface the camera HAL needs) |
 | `frameworks/native` | `keyboard-touchpad` | Keyboard touch surface handled as a touchpad instead of taps on the screen; keeps the KEY2 character map when a keyboard layout overlay is set |
 | `frameworks/opt/telephony` | `no-radio-config-wait` | Settings freezing for 2 s on pages that query the radio |
