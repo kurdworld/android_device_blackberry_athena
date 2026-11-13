@@ -1,0 +1,222 @@
+diff --git a/packages/SystemUI/src/com/android/systemui/keyguard/domain/interactor/KeyboardPinDigitBuffer.kt b/packages/SystemUI/src/com/android/systemui/keyguard/domain/interactor/KeyboardPinDigitBuffer.kt
+new file mode 100644
+index 000000000000..e2a9c615197c
+--- /dev/null
++++ b/packages/SystemUI/src/com/android/systemui/keyguard/domain/interactor/KeyboardPinDigitBuffer.kt
+@@ -0,0 +1,48 @@
++/*
++ * Copyright (C) 2026 The CalyxOS Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package com.android.systemui.keyguard.domain.interactor
++
++import com.android.systemui.dagger.SysUISingleton
++import javax.inject.Inject
++
++/**
++ * Keyboard PIN input: PIN digits typed on the lockscreen before the PIN bouncer is ready. The PIN
++ * view takes them once it has resumed (after its text has been reset), so none are lost. Only
++ * used on the main thread.
++ */
++@SysUISingleton
++class KeyboardPinDigitBuffer @Inject constructor() {
++    private val digits = ArrayDeque<Int>()
++
++    val isEmpty: Boolean
++        get() = digits.isEmpty()
++
++    fun add(digit: Int) {
++        digits.addLast(digit)
++    }
++
++    fun clear() {
++        digits.clear()
++    }
++
++    /** Removes and returns the queued digits, in the order they were typed. */
++    fun drain(): List<Int> {
++        val queued = digits.toList()
++        digits.clear()
++        return queued
++    }
++}
+diff --git a/packages/SystemUI/src/com/android/systemui/keyguard/domain/interactor/KeyguardKeyEventInteractor.kt b/packages/SystemUI/src/com/android/systemui/keyguard/domain/interactor/KeyguardKeyEventInteractor.kt
+index 02ea15872742..522468cf69df 100644
+--- a/packages/SystemUI/src/com/android/systemui/keyguard/domain/interactor/KeyguardKeyEventInteractor.kt
++++ b/packages/SystemUI/src/com/android/systemui/keyguard/domain/interactor/KeyguardKeyEventInteractor.kt
+@@ -18,7 +18,13 @@ package com.android.systemui.keyguard.domain.interactor
+ 
+ import android.content.Context
+ import android.media.AudioManager
++import android.os.Handler
++import android.os.Looper
++import android.provider.Settings
++import android.util.Log
+ import android.view.KeyEvent
++import android.view.View
++import com.android.internal.widget.LockPatternUtils
+ import com.android.systemui.Flags
+ import com.android.systemui.back.domain.interactor.BackActionInteractor
+ import com.android.systemui.dagger.SysUISingleton
+@@ -27,12 +33,17 @@ import com.android.systemui.keyevent.domain.interactor.SysUIKeyEventHandler.Comp
+ import com.android.systemui.media.controls.util.MediaSessionLegacyHelperWrapper
+ import com.android.systemui.plugins.ActivityStarter.OnDismissAction
+ import com.android.systemui.plugins.statusbar.StatusBarStateController
++import com.android.systemui.keyguard.shared.model.KeyguardState
++import com.android.systemui.keyguard.shared.model.TransitionState
+ import com.android.systemui.power.domain.interactor.PowerInteractor
++import com.android.systemui.res.R
+ import com.android.systemui.scene.shared.flag.SceneContainerFlag
+ import com.android.systemui.shade.ShadeController
++import com.android.systemui.settings.UserTracker
+ import com.android.systemui.shade.ShadeDisplayAware
+ import com.android.systemui.statusbar.StatusBarState
+ import com.android.systemui.statusbar.phone.StatusBarKeyguardViewManager
++import dagger.Lazy
+ import javax.inject.Inject
+ 
+ /** Handles key events arriving when the keyguard is showing or device is dozing. */
+@@ -49,8 +60,15 @@ constructor(
+     private val deviceEntryInteractor: DeviceEntryInteractor,
+     private val powerInteractor: PowerInteractor,
+     private val keyguardMediaKeyInteractor: KeyguardMediaKeyInteractor,
++    private val lockPatternUtils: LockPatternUtils,
++    private val userTracker: UserTracker,
++    private val keyboardPinDigitBuffer: KeyboardPinDigitBuffer,
++    private val keyguardTransitionInteractor: Lazy<KeyguardTransitionInteractor>,
+ ) {
+ 
++    private val pinHandler = Handler(Looper.getMainLooper())
++    private var pinShowAttempts = 0
++
+     fun dispatchKeyEvent(event: KeyEvent): Boolean {
+         if (statusBarStateController.isDozing) {
+             when (event.keyCode) {
+@@ -85,6 +103,11 @@ constructor(
+      * exit bouncer.
+      */
+     fun dispatchKeyEventPreIme(event: KeyEvent): Boolean {
++        // Before the views: while the bouncer is hidden its PIN view keeps focus and would
++        // swallow the digit, which is then wiped when the bouncer resets on showing.
++        if (dispatchKeyboardPinDigit(event)) {
++            return true
++        }
+         when (event.action) {
+             KeyEvent.ACTION_DOWN -> {
+                 val device = event.getDevice()
+@@ -117,6 +140,91 @@ constructor(
+         }
+     }
+ 
++    /**
++     * Keyboard PIN input: typing a PIN digit on the lockscreen, even with the screen off, brings up
++     * the PIN bouncer and enters the digit, so the user doesn't have to swipe first. Digits typed
++     * before the PIN view is ready are held in [keyboardPinDigitBuffer] and typed, in order, once the
++     * bouncer has finished appearing.
++     */
++    private fun dispatchKeyboardPinDigit(event: KeyEvent): Boolean {
++        if (SceneContainerFlag.isEnabled) return false
++        if (event.action != KeyEvent.ACTION_DOWN || event.repeatCount != 0) return false
++        if (statusBarStateController.state != StatusBarState.KEYGUARD) return false
++        // Once the PIN view is up, digits go straight to it, unless earlier digits are still
++        // waiting for it (then queue behind them to keep the order).
++        if (statusBarKeyguardViewManager.isBouncerShowing && keyboardPinDigitBuffer.isEmpty) {
++            return false
++        }
++        val digit = keyboardPinDigit(event)
++        if (digit < 0) return false
++
++        Log.d(TAG, "Keyboard PIN: digit held until the PIN view is ready")
++        keyboardPinDigitBuffer.add(digit)
++        pinShowAttempts = 0
++        pinHandler.removeCallbacks(flushPinDigits)
++        pinHandler.post(flushPinDigits)
++        return true
++    }
++
++    private fun keyboardPinDigit(event: KeyEvent): Int {
++        if (
++            Settings.Secure.getInt(context.contentResolver, KEYBOARD_PIN_INPUT, 1) != 1 ||
++                lockPatternUtils.getCredentialTypeForUser(userTracker.userId) !=
++                    LockPatternUtils.CREDENTIAL_TYPE_PIN
++        ) {
++            return -1
++        }
++        val keyCode = event.keyCode
++        if (keyCode in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9) return keyCode - KeyEvent.KEYCODE_0
++        val unicode =
++            event.keyCharacterMap.get(keyCode, KeyEvent.META_ALT_ON or KeyEvent.META_ALT_LEFT_ON)
++        return if (unicode >= '0'.code && unicode <= '9'.code) unicode - '0'.code else -1
++    }
++
++    /**
++     * Shows the PIN bouncer once the device is awake and, once it has finished appearing, types the
++     * held digits into it as normal key presses. Drops the digits if the bouncer never shows.
++     */
++    private val flushPinDigits: Runnable = Runnable {
++        if (keyboardPinDigitBuffer.isEmpty) return@Runnable
++        if (isDeviceAwake() && !statusBarKeyguardViewManager.primaryBouncerIsOrWillBeShowing()) {
++            statusBarKeyguardViewManager.showPrimaryBouncer(true, "Keyboard PIN input")
++        }
++        val root = readyPinViewRoot()
++        if (root != null) {
++            Log.d(TAG, "Keyboard PIN: PIN view ready, typing held digits")
++            for (digit in keyboardPinDigitBuffer.drain()) {
++                val keyCode = KeyEvent.KEYCODE_0 + digit
++                root.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
++                root.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
++            }
++        } else if (++pinShowAttempts < PIN_SHOW_MAX_ATTEMPTS) {
++            pinHandler.postDelayed(flushPinDigits, PIN_SHOW_RETRY_MS)
++        } else {
++            keyboardPinDigitBuffer.clear()
++        }
++    }
++
++    /**
++     * The shade window's root view once the bouncer has finished appearing and its PIN field is
++     * focused and visible. Digits typed earlier are wiped when the bouncer resets while showing.
++     */
++    private fun readyPinViewRoot(): View? {
++        val step = keyguardTransitionInteractor.get().transitionState.value
++        if (step.to != KeyguardState.PRIMARY_BOUNCER ||
++            step.transitionState != TransitionState.FINISHED
++        ) {
++            return null
++        }
++        val root = statusBarKeyguardViewManager.viewRootImpl?.view ?: return null
++        val focused = root.findFocus() ?: return null
++        return if (root.hasWindowFocus() && focused.id == R.id.pinEntry && focused.isShown) {
++            root
++        } else {
++            null
++        }
++    }
++
+     private fun dispatchMenuKeyEvent(): Boolean {
+         val shouldUnlockOnMenuPressed =
+             isDeviceAwake() &&
+@@ -169,4 +277,11 @@ constructor(
+     private fun isDeviceAwake(): Boolean {
+         return powerInteractor.detailedWakefulness.value.isAwake()
+     }
++
++    private companion object {
++        const val TAG = "KeyguardKeyEvent"
++        const val KEYBOARD_PIN_INPUT = "keyboard_pin_input"
++        const val PIN_SHOW_RETRY_MS = 60L
++        const val PIN_SHOW_MAX_ATTEMPTS = 50
++    }
+ }
