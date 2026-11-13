@@ -1,0 +1,165 @@
+Lock screen keyboard typing: the PIN bouncer accepts the digit printed on the Alt
+layer of a letter key, so the PIN can be typed on the BlackBerry KEY2 keyboard.
+A PIN digit typed while the screen is off also wakes the device and is delivered
+to the keyguard instead of being swallowed.
+
+diff --git a/packages/SystemUI/src/com/android/keyguard/KeyguardPinBasedInputView.java b/packages/SystemUI/src/com/android/keyguard/KeyguardPinBasedInputView.java
+index 2bd16eaa98da..01121228e9be 100644
+--- a/packages/SystemUI/src/com/android/keyguard/KeyguardPinBasedInputView.java
++++ b/packages/SystemUI/src/com/android/keyguard/KeyguardPinBasedInputView.java
+@@ -35,6 +35,7 @@ import android.animation.AnimatorSet;
+ import android.animation.ValueAnimator;
+ import android.content.Context;
+ import android.graphics.Rect;
++import android.provider.Settings;
+ import android.util.AttributeSet;
+ import android.view.KeyEvent;
+ import android.view.View;
+@@ -137,6 +138,18 @@ public abstract class KeyguardPinBasedInputView extends KeyguardAbsKeyInputView
+             performNumberClick(number);
+             return true;
+         }
++        // Keyboards without a digit row (BlackBerry KEY2) print digits on the Alt layer of the
++        // letter keys. Look the key up on that layer so the PIN can be typed without holding Alt,
++        // unless the "Keyboard PIN input" setting is turned off.
++        if (event != null && Settings.Secure.getInt(getContext().getContentResolver(),
++                "keyboard_pin_input", 1) == 1) {
++            int unicode = event.getKeyCharacterMap().get(keyCode,
++                    KeyEvent.META_ALT_ON | KeyEvent.META_ALT_LEFT_ON);
++            if (unicode >= '0' && unicode <= '9') {
++                performNumberClick(unicode - '0');
++                return true;
++            }
++        }
+         return super.onKeyDown(keyCode, event);
+     }
+ 
+diff --git a/packages/SystemUI/src/com/android/systemui/bouncer/ui/viewmodel/BouncerOverlayContentViewModel.kt b/packages/SystemUI/src/com/android/systemui/bouncer/ui/viewmodel/BouncerOverlayContentViewModel.kt
+index fd8d7d44cb40..d7b75da634a6 100644
+--- a/packages/SystemUI/src/com/android/systemui/bouncer/ui/viewmodel/BouncerOverlayContentViewModel.kt
++++ b/packages/SystemUI/src/com/android/systemui/bouncer/ui/viewmodel/BouncerOverlayContentViewModel.kt
+@@ -20,7 +20,10 @@ import android.app.admin.DevicePolicyManager
+ import android.app.admin.DevicePolicyResources
+ import android.content.Context
+ import android.graphics.Bitmap
++import android.provider.Settings
+ import android.security.Flags.enableWeaverWarmup
++import android.view.KeyEvent.KEYCODE_0
++import android.view.KeyEvent.KEYCODE_9
+ import androidx.compose.runtime.derivedStateOf
+ import androidx.compose.runtime.getValue
+ import androidx.compose.runtime.snapshotFlow
+@@ -509,10 +512,34 @@ constructor(
+      */
+     fun onKeyEvent(keyEvent: KeyEvent): Boolean {
+         if (keyguardMediaKeyInteractor.processMediaKeyEvent(keyEvent.nativeKeyEvent)) return true
+-        return authMethodViewModel?.onKeyEvent(keyEvent.type, keyEvent.nativeKeyEvent.keyCode)
++        return authMethodViewModel?.onKeyEvent(keyEvent.type, pinKeyCode(keyEvent.nativeKeyEvent))
+             ?: false
+     }
+ 
++    /**
++     * Physical keyboards without a digit row (BlackBerry KEY2) print digits on the Alt layer of
++     * the letter keys. Look the key up on that layer so the PIN can be typed without holding Alt,
++     * unless "Keyboard PIN input" is turned off.
++     */
++    private fun pinKeyCode(event: android.view.KeyEvent): Int {
++        val keyCode = event.keyCode
++        if (keyCode in KEYCODE_0..KEYCODE_9) return keyCode
++        val enabled =
++            Settings.Secure.getInt(applicationContext.contentResolver, "keyboard_pin_input", 1) ==
++                1
++        if (!enabled) return keyCode
++        val unicode =
++            event.keyCharacterMap.get(
++                keyCode,
++                android.view.KeyEvent.META_ALT_ON or android.view.KeyEvent.META_ALT_LEFT_ON,
++            )
++        return if (unicode >= '0'.code && unicode <= '9'.code) {
++            KEYCODE_0 + (unicode - '0'.code)
++        } else {
++            keyCode
++        }
++    }
++
+     fun onActionButtonClicked(actionButtonModel: BouncerActionButtonModel) {
+         onIntentionalUserInput()
+         when (actionButtonModel) {
+diff --git a/services/core/java/com/android/server/policy/PhoneWindowManager.java b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+index e17c6ae561d5..19a0707720b2 100644
+--- a/services/core/java/com/android/server/policy/PhoneWindowManager.java
++++ b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+@@ -5094,6 +5094,11 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                     + " policyFlags=" + Integer.toHexString(policyFlags));
+         }
+ 
++        // Keyboard PIN input: a PIN digit typed while the device is asleep wakes it and is still
++        // delivered to the keyguard, so the first digit isn't lost.
++        final boolean pinWake = !interactive && !isInjected && event.getRepeatCount() == 0
++                && getKeyboardPinDigit(event) >= 0;
++
+         // Basic policy based on interactive state.
+         int result;
+         if (interactive || (isInjected && !isWakeKey)) {
+@@ -5118,6 +5123,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             // interactive, unless the user has explicitly disabled this wake key.
+             result = ACTION_PASS_TO_USER;
+             isWakeKey = isWakeKey && isWakeKeyEnabled(keyCode);
++            if (pinWake) {
++                isWakeKey = down;
++            }
+             // Since we're dispatching the input, reset the pending key
+             mPendingWakeKey = PENDING_KEY_NULL;
+         } else {
+@@ -5127,8 +5135,12 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             if (isWakeKey && (!down || !isWakeKeyWhenScreenOff(keyCode))) {
+                 isWakeKey = false;
+             }
++            if (pinWake) {
++                isWakeKey = down;
++                result = ACTION_PASS_TO_USER;
++            }
+             // Cache the wake key on down event so we can also avoid sending the up event to the app
+-            if (isWakeKey && down) {
++            if (isWakeKey && down && !pinWake) {
+                 mPendingWakeKey = keyCode;
+             }
+         }
+@@ -5808,6 +5820,37 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+         return true;
+     }
+ 
++    /**
++     * Returns the PIN digit typed by this key press when "Keyboard PIN input" is on and a secure
++     * PIN keyguard is showing, or -1. Keyboards without a digit row (BlackBerry KEY2) print digits
++     * on the Alt layer of the letter keys, so look the key up on that layer.
++     */
++    private int getKeyboardPinDigit(KeyEvent event) {
++        if (mKeyguardDelegate == null || !mKeyguardDelegate.isShowing()
++                || !mKeyguardDelegate.isSecure(mCurrentUserId)) {
++            return -1;
++        }
++        if (Settings.Secure.getIntForUser(mContext.getContentResolver(), "keyboard_pin_input", 1,
++                UserHandle.USER_CURRENT) != 1) {
++            return -1;
++        }
++        // Only for numeric PINs: with a password or pattern the letters must stay letters.
++        if (mLockPatternUtils == null || mLockPatternUtils.getCredentialTypeForUser(
++                mCurrentUserId) != LockPatternUtils.CREDENTIAL_TYPE_PIN) {
++            return -1;
++        }
++        final int keyCode = event.getKeyCode();
++        if (keyCode >= KeyEvent.KEYCODE_0 && keyCode <= KeyEvent.KEYCODE_9) {
++            return keyCode - KeyEvent.KEYCODE_0;
++        }
++        if (event.getDevice() == null || !event.getDevice().isFullKeyboard()) {
++            return -1;
++        }
++        final int unicode = event.getKeyCharacterMap().get(keyCode,
++                KeyEvent.META_ALT_ON | KeyEvent.META_ALT_LEFT_ON);
++        return unicode >= '0' && unicode <= '9' ? unicode - '0' : -1;
++    }
++
+     /**
+      * When the screen is off we ignore some keys that might otherwise typically
+      * be considered wake keys.  We filter them out here.

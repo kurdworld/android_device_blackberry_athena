@@ -1,0 +1,28 @@
+OTA packages for devices without dynamic partitions (the KEY2 has fixed system and vendor partitions): ota_from_target_files no longer fails looking for dynamic_partitions_info.txt.
+
+diff --git a/tools/releasetools/ota_from_target_files.py b/tools/releasetools/ota_from_target_files.py
+index db218bc06d..1c582815fd 100755
+--- a/tools/releasetools/ota_from_target_files.py
++++ b/tools/releasetools/ota_from_target_files.py
+@@ -581,6 +581,9 @@ def ModifyTargetFilesDynamicPartitionInfo(input_file, key, value):
+   if os.path.isdir(input_file):
+     dynamic_partition_info_path = os.path.join(
+         input_file, *DYNAMIC_PARTITION_INFO.split("/"))
++    if not os.path.exists(dynamic_partition_info_path):
++      # Non-dynamic-partition devices have no dynamic_partitions_info.txt
++      return input_file
+     with open(dynamic_partition_info_path, "r") as fp:
+       dynamic_partition_info = fp.read()
+     dynamic_partition_info = ModifyKeyvalueList(
+@@ -589,6 +592,11 @@ def ModifyTargetFilesDynamicPartitionInfo(input_file, key, value):
+       fp.write(dynamic_partition_info)
+     return input_file
+ 
++  with zipfile.ZipFile(input_file, 'r', allowZip64=True) as zfp:
++    if DYNAMIC_PARTITION_INFO not in zfp.namelist():
++      # Non-dynamic-partition devices have no dynamic_partitions_info.txt
++      return input_file
++
+   target_file = common.MakeTempFile(prefix="targetfiles-", suffix=".zip")
+   shutil.copyfile(input_file, target_file)
+   common.ZipDelete(target_file, DYNAMIC_PARTITION_INFO)

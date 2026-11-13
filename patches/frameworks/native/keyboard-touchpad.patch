@@ -1,0 +1,59 @@
+Keyboard touchpad and scrolling: the KEY2 keyboard touch surface is handled as a touchpad, not as taps on the screen.
+
+diff --git a/services/inputflinger/reader/EventHub.cpp b/services/inputflinger/reader/EventHub.cpp
+index ca79fc5..3d9368d 100644
+--- a/services/inputflinger/reader/EventHub.cpp
++++ b/services/inputflinger/reader/EventHub.cpp
+@@ -1690,6 +1690,16 @@ bool EventHub::setKeyboardLayoutOverlay(RawDeviceId deviceId,
+     if (device == nullptr || device->keyMap.keyCharacterMap == nullptr) {
+         return false;
+     }
++
++    // The built-in stmpe keypad has a complete key character map of its own (with Alt and Sym
++    // layers). An overlay replaces whole keys, which would drop those layers.
++    if (device->identifier.name.find("stmpe") != std::string::npos &&
++        device->identifier.name.find("keypad") != std::string::npos) {
++        ALOGW("EventHub: Skipping layout overlay for %s - using its own character map",
++              device->identifier.name.c_str());
++        return false;
++    }
++
+     if (map == nullptr) {
+         device->keyMap.keyCharacterMap->clearLayoutOverlay();
+         return true;
+diff --git a/services/inputflinger/reader/mapper/TouchInputMapper.cpp b/services/inputflinger/reader/mapper/TouchInputMapper.cpp
+index ad51928..b73b77e 100644
+--- a/services/inputflinger/reader/mapper/TouchInputMapper.cpp
++++ b/services/inputflinger/reader/mapper/TouchInputMapper.cpp
+@@ -430,6 +430,8 @@ TouchInputMapper::Parameters::DeviceType TouchInputMapper::computeDeviceType(
+         deviceType = Parameters::DeviceType::TOUCH_SCREEN;
+     } else if (deviceTypeString == "touchNavigation") {
+         deviceType = Parameters::DeviceType::TOUCH_NAVIGATION;
++    } else if (deviceTypeString == "touchPad") {
++        deviceType = Parameters::DeviceType::TOUCH_PAD;
+     } else if (deviceTypeString == "pointer") {
+         deviceType = Parameters::DeviceType::POINTER;
+     } else if (deviceTypeString != "default" && deviceTypeString != "") {
+@@ -881,6 +883,10 @@ void TouchInputMapper::configureInputDevice(nsecs_t when, bool* outResetNeeded)
+         if (hasStylus()) {
+             mSource |= AINPUT_SOURCE_STYLUS;
+         }
++    } else if (mParameters.deviceType == Parameters::DeviceType::TOUCH_PAD) {
++        // A touch surface that is not a screen, such as the BlackBerry keyboard
++        mSource = AINPUT_SOURCE_TOUCHPAD;
++        mDeviceMode = DeviceMode::NAVIGATION;
+     } else if (mParameters.deviceType == Parameters::DeviceType::TOUCH_NAVIGATION) {
+         mSource = AINPUT_SOURCE_TOUCH_NAVIGATION | AINPUT_SOURCE_TOUCHPAD;
+         mDeviceMode = DeviceMode::NAVIGATION;
+diff --git a/services/inputflinger/reader/mapper/TouchInputMapper.h b/services/inputflinger/reader/mapper/TouchInputMapper.h
+index 3fc7f5e..2b84d15 100644
+--- a/services/inputflinger/reader/mapper/TouchInputMapper.h
++++ b/services/inputflinger/reader/mapper/TouchInputMapper.h
+@@ -221,6 +221,7 @@ protected:
+     struct Parameters {
+         enum class DeviceType {
+             TOUCH_SCREEN,
++            TOUCH_PAD,
+             TOUCH_NAVIGATION,
+             POINTER,
+ 

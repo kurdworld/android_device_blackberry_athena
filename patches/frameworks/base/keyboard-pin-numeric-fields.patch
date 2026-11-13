@@ -1,0 +1,25 @@
+Keyboard PIN and phone-number entry: numeric fields (PIN, dialer) accept the digit
+printed on the Alt layer of a letter key, so a PIN can be typed on a keyboard
+without a digit row (BlackBerry KEY2) without holding Alt.
+
+diff --git a/core/java/android/text/method/NumberKeyListener.java b/core/java/android/text/method/NumberKeyListener.java
+index 8f9d248eb326..544f2cecbaa4 100644
+--- a/core/java/android/text/method/NumberKeyListener.java
++++ b/core/java/android/text/method/NumberKeyListener.java
+@@ -50,7 +50,15 @@ public abstract class NumberKeyListener extends BaseKeyListener
+     protected abstract char[] getAcceptedChars();
+ 
+     protected int lookup(KeyEvent event, Spannable content) {
+-        return event.getMatch(getAcceptedChars(), getMetaState(content, event));
++        final char[] accepted = getAcceptedChars();
++        final int match = event.getMatch(accepted, getMetaState(content, event));
++        if (match != 0) {
++            return match;
++        }
++        // Keyboards without a digit row, such as the BlackBerry KEY2, print their digits on the
++        // Alt layer of the letter keys. Accept that digit in numeric fields (PIN, phone number)
++        // so it can be typed without holding Alt.
++        return event.getMatch(accepted, KeyEvent.META_ALT_ON | KeyEvent.META_ALT_LEFT_ON);
+     }
+ 
+     public CharSequence filter(CharSequence source, int start, int end,
