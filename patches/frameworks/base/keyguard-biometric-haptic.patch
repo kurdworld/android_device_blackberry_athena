@@ -1,0 +1,41 @@
+diff --git a/packages/SystemUI/src/com/android/systemui/keyguard/ui/binder/KeyguardRootViewBinder.kt b/packages/SystemUI/src/com/android/systemui/keyguard/ui/binder/KeyguardRootViewBinder.kt
+index 08a0e5c0f41a..170963431d40 100644
+--- a/packages/SystemUI/src/com/android/systemui/keyguard/ui/binder/KeyguardRootViewBinder.kt
++++ b/packages/SystemUI/src/com/android/systemui/keyguard/ui/binder/KeyguardRootViewBinder.kt
+@@ -21,6 +21,7 @@ import android.animation.AnimatorListenerAdapter
+ import android.annotation.SuppressLint
+ import android.graphics.Point
+ import android.graphics.Rect
++import android.os.VibrationEffect
+ import android.view.HapticFeedbackConstants
+ import android.view.InputDevice
+ import android.view.MotionEvent
+@@ -136,9 +137,18 @@ object KeyguardRootViewBinder {
+             view.repeatWhenAttached(mainImmediateDispatcher) {
+                 repeatOnLifecycle(Lifecycle.State.CREATED) {
+                     if (deviceEntryHapticsInteractor != null && vibratorHelper != null) {
++                        // Without primitive support MSDL plays a short generic waveform that
++                        // barely registers on some motors; the biometric haptic constants use
++                        // the device's own haptic feedback customization instead.
++                        val useMsdl =
++                            msdlFeedback() &&
++                                vibratorHelper.areAllPrimitivesSupported(
++                                    VibrationEffect.Composition.PRIMITIVE_TICK,
++                                    VibrationEffect.Composition.PRIMITIVE_CLICK,
++                                )
+                         launch {
+                             deviceEntryHapticsInteractor.playSuccessHapticOnDeviceEntry.collect {
+-                                if (msdlFeedback()) {
++                                if (useMsdl) {
+                                     msdlPlayer?.playToken(
+                                         MSDLToken.UNLOCK,
+                                         authInteractionProperties,
+@@ -154,7 +164,7 @@ object KeyguardRootViewBinder {
+ 
+                         launch {
+                             deviceEntryHapticsInteractor.playErrorHaptic.collect {
+-                                if (msdlFeedback()) {
++                                if (useMsdl) {
+                                     msdlPlayer?.playToken(
+                                         MSDLToken.FAILURE,
+                                         authInteractionProperties,
