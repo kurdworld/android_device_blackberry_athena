@@ -40,6 +40,10 @@ project folder.
 | `frameworks/av` | `video-surface-switch` | Video in apps like X stalling for about 2 s whenever a video moves on screen (hardware decoder surface switch) |
 | `frameworks/base` | `keyboard-pin-numeric-fields` | Setting a PIN (and dialling) on a keyboard without a digit row: numeric fields accept the digit printed on the Alt layer of a letter key, so W/E/R/S/D/F/Z/X/C type 1-9 |
 | `frameworks/base` | `keyguard-keyboard-pin` | Lock screen: the PIN bouncer accepts the same Alt-layer digits, and a PIN digit typed while the screen is off wakes the device and is delivered to the keyguard. The setting and key character map are cached instead of queried on every key press, which made PIN entry lag |
+| `frameworks/base` | `keyguard-keyboard-pin-bouncer` | Typing a PIN digit on the keyboard brings up the PIN bouncer and enters the digit, without swiping first; digits typed before the bouncer is ready are queued |
+| `frameworks/base` | `keyguard-pin-privacy-performance` | PIN entry lagging with "Enhanced PIN privacy": the dot and field width snap instead of running a 320 ms animation for every key |
+| `frameworks/base` | `keyguard-biometric-haptic` | Fingerprint unlock vibration using a weak generic pattern: fall back to the KEY2's full-strength biometric haptic when the motor has no MSDL primitives |
+| `frameworks/base` | `ime-switcher-shortcut` | Alt+Enter (or Shift+Space, Ctrl, SYM, as configured) opening the input method picker on the hardware keyboard; keeps the KEY2's own Alt/Sym character map when a layout overlay is set |
 | `frameworks/hardware/interfaces` | `displayservice-hal` | Flashlight and camera (display service interface the camera HAL needs) |
 | `frameworks/native` | `keyboard-touchpad` | Keyboard touch surface handled as a touchpad instead of taps on the screen; keeps the KEY2 character map when a keyboard layout overlay is set |
 | `frameworks/opt/telephony` | `no-radio-config-wait` | Settings freezing for 2 s on pages that query the radio |
@@ -52,7 +56,7 @@ project folder.
 
 | CalyxOS patch | Reason |
 |---|---|
-| `frameworks/base/blackberry-keyboard-and-hardware` | LineageOS already has most of it (volume wake, Home/Menu/App switch actions, partial screenshot, `FLAG_LONG_SWIPE`); the remaining BlackBerry-specific parts need a hand-written LineageOS port, not a straight apply. Only the PIN-entry parts are carried over, as `keyboard-pin-numeric-fields` and `keyguard-keyboard-pin`; the helper that queues digits typed before the bouncer appears is not ported |
+| `frameworks/base/blackberry-keyboard-and-hardware` | LineageOS already has most of it (volume wake, Home/Menu/App switch actions, partial screenshot, `FLAG_LONG_SWIPE`); the remaining BlackBerry-specific parts need a hand-written LineageOS port, not a straight apply. The PIN-entry, PIN-bouncer queue, IME-switcher and biometric-haptic parts are carried over as separate patches; the keyboard touchpad and notification LED parts are not |
 | `hardware/qcom-caf/sdm660/display-namespace-imports` | LineageOS' `hardware/qcom-caf/sdm660/Android.bp` already declares the same `soong_namespace` imports |
 | `calyx-sdk/open-app-action` | CalyxOS SDK only, no LineageOS counterpart |
 | `packages/apps/CalyxParts/hardware-key-options` | CalyxParts only; LineageParts would need a separate port |
