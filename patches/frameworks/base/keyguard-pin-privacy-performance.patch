@@ -1,0 +1,27 @@
+diff --git a/packages/SystemUI/src/com/android/keyguard/PasswordTextView.java b/packages/SystemUI/src/com/android/keyguard/PasswordTextView.java
+index 394773df28c5..ae6a21ff6d69 100644
+--- a/packages/SystemUI/src/com/android/keyguard/PasswordTextView.java
++++ b/packages/SystemUI/src/com/android/keyguard/PasswordTextView.java
+@@ -468,6 +468,22 @@ public class PasswordTextView extends BasePasswordTextView {
+         }
+ 
+         void startAppearAnimation() {
++            if (!mShowPassword) {
++                // Enhanced PIN privacy: the digit itself is never shown, so there is nothing to
++                // animate. Snap the dot and the field width instead of running the 320 ms
++                // overshoot animator, which invalidated the whole PIN field on every frame for
++                // every key press and made typing lag.
++                cancelAnimator(dotAnimator);
++                dotAnimator = null;
++                dotAnimationIsGrowing = false;
++                cancelAnimator(widthAnimator);
++                widthAnimator = null;
++                widthAnimationIsGrowing = false;
++                currentDotSizeFactor = 1.0f;
++                currentWidthFactor = 1.0f;
++                invalidate();
++                return;
++            }
+             boolean dotNeedsAnimation =
+                     !mShowPassword && (dotAnimator == null || !dotAnimationIsGrowing);
+             boolean textNeedsAnimation =
