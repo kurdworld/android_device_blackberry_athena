@@ -20,6 +20,9 @@ PRODUCT_MANUFACTURER := BlackBerry
 PRODUCT_MODEL := KEY2
 PRODUCT_NAME := lineage_athena
 
+# Release signing with dedicated kurdworld/LineageOS keys (not stored in git).
+PRODUCT_DEFAULT_DEV_CERTIFICATE := vendor/lineage-priv/keys/releasekey
+
 # need to keep old FPs from oreo for play certification
 PRODUCT_BUILD_PROP_OVERRIDES += \
     BuildDesc="bbf100dsglobal 8 OPM1.171019.026 ACQ160 release-keys" \
@@ -30,4 +33,4 @@ PRODUCT_BUILD_PROP_OVERRIDES += \
 
 # OTA Updater
 PRODUCT_PROPERTY_OVERRIDES += \
-    lineage.updater.uri=https://raw.githubusercontent.com/Lineage-BBKey2/distribution/main/{device}-4p19.json
+    lineage.updater.uri=https://raw.githubusercontent.com/kurdworld/lineageos_ota/main/{device}.json

@@ -42,7 +42,7 @@
             android:key="keyboard_adaptive_brightness"
             android:title="@string/keyboard_adaptive_brightness_title"
             android:summary="@string/keyboard_adaptive_brightness_summary"
-            android:defaultValue="true" />
+            android:defaultValue="false" />
 
         <SwitchPreference
             android:key="keyboard_backlight_high_brightness_off"
@@ -90,7 +90,7 @@
             android:key="button_adaptive_brightness"
             android:title="@string/button_adaptive_brightness_title"
             android:summary="@string/button_adaptive_brightness_summary"
-            android:defaultValue="true" />
+            android:defaultValue="false" />
 
         <SeekBarPreference
             android:key="button_brightness"
@@ -146,6 +146,21 @@
             <intent
                 android:targetPackage="com.blackberry.settings"
                 android:targetClass="com.blackberry.settings.LegacyBlackBerryAppsActivity" />
+        </Preference>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="troubleshooting_category"
+        android:title="@string/troubleshooting_category">
+
+        <Preference
+            android:key="collect_logs"
+            android:title="@string/collect_logs_title"
+            android:summary="@string/collect_logs_entry_summary">
+            <intent
+                android:targetPackage="com.blackberry.settings"
+                android:targetClass="com.blackberry.settings.CollectLogsActivity" />
         </Preference>
 
     </PreferenceCategory>

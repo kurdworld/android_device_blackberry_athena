@@ -1,0 +1,19 @@
+Video in apps like X no longer stalls: MediaCodec re-applies the surface generation number after reconnecting, so the hardware (OMX) decoder can move its buffers to a new surface.
+
+diff --git a/media/libstagefright/MediaCodec.cpp b/media/libstagefright/MediaCodec.cpp
+index ccd7790..892d8f3 100644
+--- a/media/libstagefright/MediaCodec.cpp
++++ b/media/libstagefright/MediaCodec.cpp
+@@ -7724,6 +7724,12 @@ status_t MediaCodec::connectToSurface(const sp<Surface> &surface, uint32_t *gene
+                     new OnBufferReleasedListener(*generation, mBufferChannel);
+             err = surfaceConnectWithListener(
+                     surface, listener, "connectToSurface(reconnect-with-listener)");
++            // Surface::disconnect() clears the client-side generation number while the
++            // queue keeps it, so buffers attached later (ACodec surface switches) would
++            // carry generation 0 and be rejected. Re-apply it after reconnecting.
++            if (err == OK) {
++                surface->setGenerationNumber(*generation);
++            }
+         }
+ 
+         if (err != OK) {

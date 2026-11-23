@@ -1,0 +1,18 @@
+diff --git a/src/org/lineageos/lineageparts/utils/DeviceUtils.java b/src/org/lineageos/lineageparts/utils/DeviceUtils.java
+index 20a32ee..abcc35c 100644
+--- a/src/org/lineageos/lineageparts/utils/DeviceUtils.java
++++ b/src/org/lineageos/lineageparts/utils/DeviceUtils.java
+@@ -260,7 +260,12 @@ public class DeviceUtils {
+         } catch (CameraAccessException | AssertionError e) {
+             // Ignore
+         }
+-        return false;
++        // The camera service can be unavailable while Settings is starting, or
++        // the vendor HAL may not report LENS_FACING for the flash unit. Fall
++        // back to the platform feature flag so the power-button torch entry
++        // does not disappear on devices that do have a flash.
++        return context.getPackageManager()
++                .hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
+     }
+ 
+     public static boolean isMobileDataEnabled(Context context) {

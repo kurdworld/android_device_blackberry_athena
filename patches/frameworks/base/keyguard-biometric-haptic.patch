@@ -1,0 +1,36 @@
+diff --git a/packages/SystemUI/src/com/android/systemui/keyguard/ui/binder/KeyguardRootViewBinder.kt b/packages/SystemUI/src/com/android/systemui/keyguard/ui/binder/KeyguardRootViewBinder.kt
+index 08a0e5c0f41a..725ec9a899d4 100644
+--- a/packages/SystemUI/src/com/android/systemui/keyguard/ui/binder/KeyguardRootViewBinder.kt
++++ b/packages/SystemUI/src/com/android/systemui/keyguard/ui/binder/KeyguardRootViewBinder.kt
+@@ -37,7 +37,6 @@ import androidx.lifecycle.repeatOnLifecycle
+ import com.android.app.tracing.coroutines.launchTraced as launch
+ import com.android.keyguard.AuthInteractionProperties
+ import com.android.systemui.Flags
+-import com.android.systemui.Flags.msdlFeedback
+ import com.android.systemui.common.ui.ConfigurationState
+ import com.android.systemui.common.ui.view.onApplyWindowInsets
+ import com.android.systemui.common.ui.view.onLayoutChanged
+@@ -136,9 +135,13 @@ object KeyguardRootViewBinder {
+             view.repeatWhenAttached(mainImmediateDispatcher) {
+                 repeatOnLifecycle(Lifecycle.State.CREATED) {
+                     if (deviceEntryHapticsInteractor != null && vibratorHelper != null) {
++                        // The KEY2's MSDL unlock/failure tokens are too weak even when the
++                        // motor reports primitive support, so always use the full-strength
++                        // biometric constants.
++                        val useMsdl = false
+                         launch {
+                             deviceEntryHapticsInteractor.playSuccessHapticOnDeviceEntry.collect {
+-                                if (msdlFeedback()) {
++                                if (useMsdl) {
+                                     msdlPlayer?.playToken(
+                                         MSDLToken.UNLOCK,
+                                         authInteractionProperties,
+@@ -154,7 +157,7 @@ object KeyguardRootViewBinder {
+ 
+                         launch {
+                             deviceEntryHapticsInteractor.playErrorHaptic.collect {
+-                                if (msdlFeedback()) {
++                                if (useMsdl) {
+                                     msdlPlayer?.playToken(
+                                         MSDLToken.FAILURE,
+                                         authInteractionProperties,

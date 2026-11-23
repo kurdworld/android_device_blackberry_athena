@@ -1,0 +1,45 @@
+diff --git a/services/core/java/com/android/server/power/PowerManagerService.java b/services/core/java/com/android/server/power/PowerManagerService.java
+index 02ad3cd66945..e6b014e099dc 100644
+--- a/services/core/java/com/android/server/power/PowerManagerService.java
++++ b/services/core/java/com/android/server/power/PowerManagerService.java
+@@ -388,6 +388,10 @@ public final class PowerManagerService extends SystemService
+     private float mButtonBrightness;
+     private boolean mKeyboardVisible;
+     private float mKeyboardBrightness;
++    // Follow the screen brightness for the physical keyboard backlight. When
++    // off, the keyboard uses the fixed keyboard_brightness setting instead,
++    // which keeps it steady while auto-brightness is changing.
++    private boolean mKeyboardAdaptiveBrightness;
+ 
+     private boolean mButtonLightOnKeypressOnly;
+ 
+@@ -1674,6 +1678,9 @@ public final class PowerManagerService extends SystemService
+         resolver.registerContentObserver(LineageSettings.Secure.getUriFor(
+                 LineageSettings.Secure.KEYBOARD_BRIGHTNESS),
+                 false, mSettingsObserver, UserHandle.USER_ALL);
++        resolver.registerContentObserver(Settings.Secure.getUriFor(
++                "keyboard_adaptive_brightness"),
++                false, mSettingsObserver, UserHandle.USER_ALL);
+ 
+         // Register for broadcasts from other components of the system.
+         IntentFilter filter = new IntentFilter();
+@@ -1831,6 +1838,8 @@ public final class PowerManagerService extends SystemService
+         mKeyboardBrightness = LineageSettings.Secure.getFloatForUser(resolver,
+                 LineageSettings.Secure.KEYBOARD_BRIGHTNESS, mKeyboardBrightnessDefault,
+                 UserHandle.USER_CURRENT);
++        mKeyboardAdaptiveBrightness = Settings.Secure.getIntForUser(resolver,
++                "keyboard_adaptive_brightness", 0, UserHandle.USER_CURRENT) != 0;
+ 
+         mDirty |= DIRTY_SETTINGS;
+     }
+@@ -3467,7 +3476,9 @@ public final class PowerManagerService extends SystemService
+ 
+                             if (mKeyboardLight != null) {
+                                 float keyboardBrightness = BRIGHTNESS_OFF_FLOAT;
+-                                if (isValidBrightness(mButtonBrightnessOverrideFromWindowManager)) {
++                                if (mKeyboardAdaptiveBrightness
++                                        && isValidBrightness(
++                                                mButtonBrightnessOverrideFromWindowManager)) {
+                                     if (mButtonBrightnessOverrideFromWindowManager >
+                                             PowerManager.BRIGHTNESS_MIN) {
+                                         keyboardBrightness =

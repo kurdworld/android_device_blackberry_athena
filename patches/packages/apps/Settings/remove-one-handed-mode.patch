@@ -1,0 +1,39 @@
+diff --git a/res/xml/accessibility_system_controls.xml b/res/xml/accessibility_system_controls.xml
+index cc28a54f8a1..bc44e25f80e 100644
+--- a/res/xml/accessibility_system_controls.xml
++++ b/res/xml/accessibility_system_controls.xml
+@@ -31,17 +31,6 @@
+         settings:searchable="false"
+         settings:controller="com.android.settings.gestures.SystemNavigationPreferenceController"/>
+ 
+-    <!-- The item is not specific to Accessibility.
+-        The same entry is under System > Gesture, which is unlikely to be removed,
+-        so this is not searchable. -->
+-    <Preference
+-        android:fragment="com.android.settings.gestures.OneHandedSettings"
+-        android:key="gesture_system_navigation_one_handed_accessibility"
+-        android:persistent="false"
+-        android:title="@string/one_handed_title"
+-        settings:searchable="false"
+-        settings:controller="com.android.settings.gestures.OneHandedEnablePreferenceController"/>
+-
+     <SwitchPreferenceCompat
+         android:key="incall_power_button_behavior"
+         android:title="@string/accessibility_power_button_ends_call_prerefence_title"
+diff --git a/res/xml/gestures.xml b/res/xml/gestures.xml
+index 2b18c0cf06e..16628767ac2 100644
+--- a/res/xml/gestures.xml
++++ b/res/xml/gestures.xml
+@@ -49,12 +49,6 @@
+         settings:controller="com.android.settings.gestures.SystemNavigationPreferenceController"
+         settings:keywords="@string/keywords_system_navigation" />
+ 
+-    <Preference
+-        android:key="gesture_one_handed"
+-        android:title="@string/one_handed_title"
+-        android:fragment="com.android.settings.gestures.OneHandedSettings"
+-        settings:controller="com.android.settings.gestures.OneHandedEnablePreferenceController" />
+-
+     <Preference
+         android:key="gesture_tap_screen_input_summary"
+         android:title="@string/ambient_display_tap_screen_title"

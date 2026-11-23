@@ -1,0 +1,143 @@
+diff --git a/services/core/java/com/android/server/audio/AudioService.java b/services/core/java/com/android/server/audio/AudioService.java
+index 7f9555c7713c..6e6f3b4ee2be 100644
+--- a/services/core/java/com/android/server/audio/AudioService.java
++++ b/services/core/java/com/android/server/audio/AudioService.java
+@@ -235,7 +235,9 @@ import android.media.permission.SafeCloseable;
+ import android.media.projection.IMediaProjection;
+ import android.media.projection.IMediaProjectionCallback;
+ import android.media.projection.IMediaProjectionManager;
++import android.media.session.MediaController;
+ import android.media.session.MediaSessionManager;
++import android.media.session.PlaybackState;
+ import android.net.Uri;
+ import android.os.Binder;
+ import android.os.Build;
+@@ -428,6 +430,12 @@ public class AudioService extends IAudioService.Stub
+     /** do not use directly, use getMediaSessionManager() which handles lazy initialization */
+     @Nullable private volatile MediaSessionManager mMediaSessionManager;
+ 
++    /**
++     * Media sessions that were paused when a call started, to be resumed when it ends.
++     * Guarded by its own monitor; only touched from the audio handler thread.
++     */
++    private final List<MediaController> mCallPausedSessions = new ArrayList<>();
++
+     // the platform type affects volume and silent mode behavior
+     private final int mPlatformType;
+ 
+@@ -1972,6 +1980,85 @@ public class AudioService extends IAudioService.Stub
+         return mMediaSessionManager;
+     }
+ 
++    /**
++     * Pause media playback when a call starts, so music does not keep playing over the
++     * call (for example over Bluetooth SCO in a car). Only sessions that are actually
++     * playing are paused; the call app's own session and other call apps' voice
++     * sessions are left alone.
++     *
++     * @param callPackage package that owns the audio mode, or null if unknown
++     */
++    private void pauseMediaForCall(@Nullable String callPackage) {
++        final List<MediaController> controllers;
++        try {
++            controllers = getMediaSessionManager().getActiveSessions(null);
++        } catch (Exception e) {
++            Log.w(TAG, "pauseMediaForCall: cannot get media sessions", e);
++            return;
++        }
++        final List<MediaController> paused = new ArrayList<>();
++        for (MediaController controller : controllers) {
++            try {
++                if (callPackage != null && callPackage.equals(controller.getPackageName())) {
++                    continue;
++                }
++                final PlaybackState state = controller.getPlaybackState();
++                if (state == null || state.getState() != PlaybackState.STATE_PLAYING) {
++                    continue;
++                }
++                final MediaController.PlaybackInfo info = controller.getPlaybackInfo();
++                final AudioAttributes attributes = info != null
++                        ? info.getAudioAttributes() : null;
++                if (attributes != null) {
++                    final int usage = attributes.getUsage();
++                    // Leave other call apps' voice sessions alone. Anything else that is
++                    // playing is media the user does not want mixed into the call; players
++                    // often report USAGE_UNKNOWN, so this must not require USAGE_MEDIA.
++                    if (usage == AudioAttributes.USAGE_VOICE_COMMUNICATION
++                            || usage == AudioAttributes.USAGE_VOICE_COMMUNICATION_SIGNALLING) {
++                        continue;
++                    }
++                }
++                controller.getTransportControls().pause();
++                paused.add(controller);
++                Log.i(TAG, "pauseMediaForCall: paused " + controller.getPackageName());
++            } catch (Exception e) {
++                Log.w(TAG, "pauseMediaForCall: cannot pause "
++                        + controller.getPackageName(), e);
++            }
++        }
++        synchronized (mCallPausedSessions) {
++            mCallPausedSessions.addAll(paused);
++        }
++    }
++
++    /** Resume the media sessions that {@link #pauseMediaForCall} paused. */
++    private void resumeMediaAfterCall() {
++        final List<MediaController> paused;
++        synchronized (mCallPausedSessions) {
++            if (mCallPausedSessions.isEmpty()) {
++                return;
++            }
++            paused = new ArrayList<>(mCallPausedSessions);
++            mCallPausedSessions.clear();
++        }
++        for (MediaController controller : paused) {
++            try {
++                final PlaybackState state = controller.getPlaybackState();
++                // Only resume a session that is still paused: if the user
++                // started something else during the call, leave it alone.
++                if (state != null && state.getState() == PlaybackState.STATE_PAUSED) {
++                    controller.getTransportControls().play();
++                    Log.i(TAG, "resumeMediaAfterCall: resumed "
++                            + controller.getPackageName());
++                }
++            } catch (Exception e) {
++                Log.w(TAG, "resumeMediaAfterCall: cannot resume "
++                        + controller.getPackageName(), e);
++            }
++        }
++    }
++
+     /**
+      * Initialize intent receives and settings observers for this service.
+      * Must be called after createStreamStates() as the handling of some events
+@@ -7643,6 +7730,29 @@ public class AudioService extends IAudioService.Stub
+                 sendMsg(mAudioHandler, MSG_DISPATCH_AUDIO_MODE, SENDMSG_REPLACE, mode, 0,
+                         /*obj*/ null, /*delay*/ 0);
+                 int previousMode = mMode.getAndSet(mode);
++                // Stop media playback when a call starts. Telecom's focus request
++                // already makes well-behaved players pause for a phone call, but a
++                // third-party VoIP app only sets MODE_IN_COMMUNICATION, so music can
++                // keep playing over the call (for example over Bluetooth SCO in a car).
++                final boolean pauseMedia = (mode == AudioSystem.MODE_IN_CALL
++                        || mode == AudioSystem.MODE_IN_COMMUNICATION) && previousMode != mode;
++                // Resume the media paused for the call when it ends. This also covers
++                // a call app that died without clearing its own state.
++                final boolean resumeMedia = mode == AudioSystem.MODE_NORMAL
++                        && previousMode != AudioSystem.MODE_NORMAL;
++                if (pauseMedia || resumeMedia) {
++                    final String callPackage = currentModeHandler != null
++                            ? currentModeHandler.getPackage() : null;
++                    // Run outside mSetModeLock: the media session calls can block and
++                    // the app may call back into AudioService.
++                    mAudioHandler.post(() -> {
++                        if (pauseMedia) {
++                            pauseMediaForCall(callPackage);
++                        } else {
++                            resumeMediaAfterCall();
++                        }
++                    });
++                }
+                 // Note: newModeOwnerPid is always 0 when actualMode is MODE_NORMAL
+                 mModeLogger.enqueue(new PhoneStateEvent(requesterPackage, requesterPid,
+                         requestedMode, pid, mode));

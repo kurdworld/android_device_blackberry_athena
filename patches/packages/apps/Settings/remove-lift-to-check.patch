@@ -1,0 +1,15 @@
+diff --git a/res/xml/display_settings.xml b/res/xml/display_settings.xml
+index 65fddf3ae9f..b84dda5fb08 100644
+--- a/res/xml/display_settings.xml
++++ b/res/xml/display_settings.xml
+@@ -236,10 +236,6 @@
+             android:title="@string/camera_gesture_title"
+             android:summary="@string/camera_gesture_desc"/>
+ 
+-        <SwitchPreferenceCompat
+-            android:key="lift_to_wake"
+-            android:title="@string/lift_to_wake_title"/>
+-
+         <SwitchPreferenceCompat
+             android:key="tap_to_wake"
+             android:title="@string/tap_to_wake"

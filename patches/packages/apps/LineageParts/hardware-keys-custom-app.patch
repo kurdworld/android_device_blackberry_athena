@@ -1,0 +1,848 @@
+diff --git a/res/layout/app_picker_item.xml b/res/layout/app_picker_item.xml
+new file mode 100644
+index 0000000..605682a
+--- /dev/null
++++ b/res/layout/app_picker_item.xml
+@@ -0,0 +1,34 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++     Copyright (C) 2026 The LineageOS Project
++     SPDX-License-Identifier: Apache-2.0
++-->
++<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    android:layout_width="match_parent"
++    android:layout_height="wrap_content"
++    android:minHeight="64dp"
++    android:orientation="horizontal"
++    android:gravity="center_vertical"
++    android:background="?android:attr/selectableItemBackground"
++    android:paddingStart="24dp"
++    android:paddingEnd="24dp"
++    android:paddingTop="8dp"
++    android:paddingBottom="8dp">
++
++    <ImageView
++        android:id="@+id/app_icon"
++        android:layout_width="32dp"
++        android:layout_height="32dp"
++        android:importantForAccessibility="no" />
++
++    <TextView
++        android:id="@+id/app_name"
++        android:layout_width="0dp"
++        android:layout_height="wrap_content"
++        android:layout_weight="1"
++        android:layout_marginStart="20dp"
++        android:textAppearance="?android:attr/textAppearanceListItem"
++        android:maxLines="2"
++        android:ellipsize="end" />
++
++</LinearLayout>
+diff --git a/res/values/arrays.xml b/res/values/arrays.xml
+index e41bcd3..30aacef 100644
+--- a/res/values/arrays.xml
++++ b/res/values/arrays.xml
+@@ -87,6 +87,7 @@
+         <item>@string/hardware_keys_action_screenshot</item>
+         <item>@string/hardware_keys_action_partial_screenshot</item>
+         <item>@string/hardware_keys_action_cycle_ringer_mode</item>
++        <item>@string/hardware_keys_action_custom_app</item>
+     </string-array>
+ 
+     <string-array name="hardware_keys_action_values" translatable="false">
+@@ -105,6 +106,38 @@
+         <item>12</item>
+         <item>13</item>
+         <item>14</item>
++        <item>15</item>
++    </string-array>
++
++    <!-- BlackBerry KEY2 Sym, Function and Convenience key actions -->
++    <string-array name="blackberry_key_action_entries" translatable="false">
++        <item>@string/hardware_keys_action_default</item>
++        <item>@string/hardware_keys_action_ctrl</item>
++        <item>@string/hardware_keys_action_tab</item>
++        <item>@string/hardware_keys_action_custom_app</item>
++    </string-array>
++
++    <string-array name="blackberry_key_action_values" translatable="false">
++        <item>0</item>
++        <item>1</item>
++        <item>2</item>
++        <item>4</item>
++    </string-array>
++
++    <string-array name="blackberry_key_function_action_entries" translatable="false">
++        <item>@string/hardware_keys_action_default</item>
++        <item>@string/hardware_keys_action_ctrl</item>
++        <item>@string/hardware_keys_action_tab</item>
++        <item>@string/hardware_keys_action_super</item>
++        <item>@string/hardware_keys_action_custom_app</item>
++    </string-array>
++
++    <string-array name="blackberry_key_function_action_values" translatable="false">
++        <item>0</item>
++        <item>1</item>
++        <item>2</item>
++        <item>3</item>
++        <item>4</item>
+     </string-array>
+ 
+     <!-- Volume key cursor control -->
+diff --git a/res/values/config.xml b/res/values/config.xml
+index 65a9e1f..cfeaecf 100644
+--- a/res/values/config.xml
++++ b/res/values/config.xml
+@@ -27,4 +27,8 @@
+              (true for some tablets) -->
+     <integer name="config_volumeRockerVsDisplayOrientation">1</integer>
+ 
++    <!-- Whether to show the BlackBerry KEY2's Sym, Function and Convenience
++         key categories in System > Buttons. -->
++    <bool name="config_show_blackberry_hardware_keys">false</bool>
++
+ </resources>
+diff --git a/res/values/strings.xml b/res/values/strings.xml
+index 92ae00d..d23ecf7 100644
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -188,8 +188,17 @@
+     <string name="hardware_keys_camera_key_title">Camera button</string>
+     <string name="hardware_keys_volume_keys_title">Volume buttons</string>
+     <string name="hardware_keys_short_press_title">Short press action</string>
++    <string name="hardware_keys_action_title">Action</string>
+     <string name="hardware_keys_long_press_title">Long press action</string>
+     <string name="hardware_keys_double_tap_title">Double tap action</string>
++    <string name="hardware_keys_double_press_title">Double press action</string>
++    <string name="hardware_keys_sym_key_title">Sym key</string>
++    <string name="hardware_keys_function_key_title">Function key</string>
++    <string name="hardware_keys_convenience_key_title">Convenience key</string>
++    <string name="hardware_keys_action_default">Default</string>
++    <string name="hardware_keys_action_ctrl">Ctrl</string>
++    <string name="hardware_keys_action_tab">Tab</string>
++    <string name="hardware_keys_action_super">Super key</string>
+     <string name="hardware_keys_action_nothing">No action</string>
+     <string name="hardware_keys_action_menu">Open/close menu</string>
+     <string name="hardware_keys_action_app_switch">Recent apps switcher</string>
+@@ -205,6 +214,9 @@
+     <string name="hardware_keys_action_screenshot" translatable="false">@string/power_menu_screenshot_title</string>
+     <string name="hardware_keys_action_partial_screenshot">Partial screenshot</string>
+     <string name="hardware_keys_action_cycle_ringer_mode">Cycle ringer mode</string>
++    <string name="hardware_keys_action_custom_app">Custom app</string>
++    <string name="hardware_keys_custom_app_summary_format">Custom App: %1$s</string>
++    <string name="hardware_keys_custom_app_none">None</string>
+     <string name="camera_sleep_on_release_title">Screen peek</string>
+     <string name="camera_sleep_on_release_summary">A half press will keep the screen on only while the button is held down</string>
+     <string name="camera_launch_title">Launch camera</string>
+diff --git a/res/xml/button_settings.xml b/res/xml/button_settings.xml
+index 72f2b36..30c0ae7 100644
+--- a/res/xml/button_settings.xml
++++ b/res/xml/button_settings.xml
+@@ -113,6 +113,85 @@
+ 
+     </PreferenceCategory>
+ 
++    <PreferenceCategory
++        android:key="sym_key"
++        android:title="@string/hardware_keys_sym_key_title" >
++
++        <ListPreference
++            android:key="blackberry_keys_sym_short_press"
++            android:dialogTitle="@string/hardware_keys_short_press_title"
++            android:title="@string/hardware_keys_short_press_title"
++            android:entries="@array/blackberry_key_action_entries"
++            android:entryValues="@array/blackberry_key_action_values"
++            android:persistent="false" />
++
++        <ListPreference
++            android:key="blackberry_keys_sym_long_press"
++            android:dialogTitle="@string/hardware_keys_long_press_title"
++            android:title="@string/hardware_keys_long_press_title"
++            android:entries="@array/blackberry_key_action_entries"
++            android:entryValues="@array/blackberry_key_action_values"
++            android:persistent="false" />
++
++        <ListPreference
++            android:key="blackberry_keys_sym_double_press"
++            android:dialogTitle="@string/hardware_keys_double_press_title"
++            android:title="@string/hardware_keys_double_press_title"
++            android:entries="@array/blackberry_key_action_entries"
++            android:entryValues="@array/blackberry_key_action_values"
++            android:persistent="false" />
++
++    </PreferenceCategory>
++
++    <PreferenceCategory
++        android:key="function_key"
++        android:title="@string/hardware_keys_function_key_title" >
++
++        <ListPreference
++            android:key="blackberry_keys_function_short_press"
++            android:dialogTitle="@string/hardware_keys_action_title"
++            android:title="@string/hardware_keys_action_title"
++            android:entries="@array/blackberry_key_function_action_entries"
++            android:entryValues="@array/blackberry_key_function_action_values"
++            android:persistent="false" />
++
++    </PreferenceCategory>
++
++    <PreferenceCategory
++        android:key="convenience_key"
++        android:title="@string/hardware_keys_convenience_key_title" >
++
++        <SwitchPreferenceCompat
++            android:key="convenience_wake_screen"
++            android:title="@string/button_wake_title"
++            android:persistent="false" />
++
++        <ListPreference
++            android:key="blackberry_keys_convenience_short_press"
++            android:dialogTitle="@string/hardware_keys_short_press_title"
++            android:title="@string/hardware_keys_short_press_title"
++            android:entries="@array/blackberry_key_action_entries"
++            android:entryValues="@array/blackberry_key_action_values"
++            android:persistent="false" />
++
++        <ListPreference
++            android:key="blackberry_keys_convenience_long_press"
++            android:dialogTitle="@string/hardware_keys_long_press_title"
++            android:title="@string/hardware_keys_long_press_title"
++            android:entries="@array/blackberry_key_action_entries"
++            android:entryValues="@array/blackberry_key_action_values"
++            android:persistent="false" />
++
++        <ListPreference
++            android:key="blackberry_keys_convenience_double_press"
++            android:dialogTitle="@string/hardware_keys_double_press_title"
++            android:title="@string/hardware_keys_double_press_title"
++            android:entries="@array/blackberry_key_action_entries"
++            android:entryValues="@array/blackberry_key_action_values"
++            android:persistent="false" />
++
++    </PreferenceCategory>
++
+     <PreferenceCategory
+         android:key="home_key"
+         android:title="@string/hardware_keys_home_key_title" >
+diff --git a/src/org/lineageos/lineageparts/input/ButtonSettings.java b/src/org/lineageos/lineageparts/input/ButtonSettings.java
+index 47b6daf..044d642 100644
+--- a/src/org/lineageos/lineageparts/input/ButtonSettings.java
++++ b/src/org/lineageos/lineageparts/input/ButtonSettings.java
+@@ -12,11 +12,17 @@ import static com.android.systemui.shared.recents.utilities.Utilities.isLargeScr
+ 
+ import static org.lineageos.internal.util.DeviceKeysConstants.*;
+ 
++import android.content.ComponentName;
+ import android.content.ContentResolver;
+ import android.content.Context;
++import android.content.Intent;
+ import android.content.SharedPreferences;
+ import android.content.om.IOverlayManager;
++import android.content.pm.ActivityInfo;
++import android.content.pm.PackageManager;
++import android.content.pm.ResolveInfo;
+ import android.content.res.Resources;
++import android.graphics.drawable.Drawable;
+ import android.os.Bundle;
+ import android.os.Handler;
+ import android.os.Looper;
+@@ -28,8 +34,15 @@ import android.util.ArraySet;
+ import android.util.Log;
+ import android.view.Display;
+ import android.view.IWindowManager;
++import android.view.LayoutInflater;
++import android.view.View;
++import android.view.ViewGroup;
+ import android.view.WindowManagerGlobal;
++import android.widget.BaseAdapter;
++import android.widget.ImageView;
++import android.widget.TextView;
+ 
++import androidx.appcompat.app.AlertDialog;
+ import androidx.preference.ListPreference;
+ import androidx.preference.Preference;
+ import androidx.preference.PreferenceCategory;
+@@ -40,6 +53,7 @@ import androidx.preference.SwitchPreferenceCompat;
+ import lineageos.hardware.LineageHardwareManager;
+ import lineageos.providers.LineageSettings;
+ 
++import org.lineageos.internal.util.BlackBerryKeys;
+ import org.lineageos.lineageparts.R;
+ import org.lineageos.lineageparts.SettingsPreferenceFragment;
+ import org.lineageos.lineageparts.search.BaseSearchIndexProvider;
+@@ -50,6 +64,7 @@ import org.lineageos.lineageparts.utils.TelephonyUtils;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.List;
++import java.util.Locale;
+ import java.util.Set;
+ 
+ public class ButtonSettings extends SettingsPreferenceFragment
+@@ -109,6 +124,98 @@ public class ButtonSettings extends SettingsPreferenceFragment
+     private static final String CATEGORY_NAVBAR = "navigation_bar_category";
+     private static final String CATEGORY_EXTRAS = "extras_category";
+ 
++    private static final String CATEGORY_SYM = "sym_key";
++    private static final String CATEGORY_FUNCTION = "function_key";
++    private static final String CATEGORY_CONVENIENCE = "convenience_key";
++    private static final String KEY_CONVENIENCE_WAKE_SCREEN = "convenience_wake_screen";
++
++    /**
++     * Each button preference, the setting holding its action, and the setting holding the
++     * component launched when that trigger is set to "Custom app".
++     */
++    private static final String[][] ACTION_TRIGGERS = {
++            { KEY_BACK_LONG_PRESS,
++                    LineageSettings.System.KEY_BACK_LONG_PRESS_ACTION,
++                    LineageSettings.System.KEY_BACK_LONG_PRESS_CUSTOM_APP },
++            { KEY_NAVIGATION_BACK_LONG_PRESS,
++                    LineageSettings.System.KEY_BACK_LONG_PRESS_ACTION,
++                    LineageSettings.System.KEY_BACK_LONG_PRESS_CUSTOM_APP },
++            { KEY_HOME_LONG_PRESS,
++                    LineageSettings.System.KEY_HOME_LONG_PRESS_ACTION,
++                    LineageSettings.System.KEY_HOME_LONG_PRESS_CUSTOM_APP },
++            { KEY_NAVIGATION_HOME_LONG_PRESS,
++                    LineageSettings.System.KEY_HOME_LONG_PRESS_ACTION,
++                    LineageSettings.System.KEY_HOME_LONG_PRESS_CUSTOM_APP },
++            { KEY_HOME_DOUBLE_TAP,
++                    LineageSettings.System.KEY_HOME_DOUBLE_TAP_ACTION,
++                    LineageSettings.System.KEY_HOME_DOUBLE_TAP_CUSTOM_APP },
++            { KEY_NAVIGATION_HOME_DOUBLE_TAP,
++                    LineageSettings.System.KEY_HOME_DOUBLE_TAP_ACTION,
++                    LineageSettings.System.KEY_HOME_DOUBLE_TAP_CUSTOM_APP },
++            { KEY_MENU_PRESS,
++                    LineageSettings.System.KEY_MENU_ACTION,
++                    LineageSettings.System.KEY_MENU_ACTION_CUSTOM_APP },
++            { KEY_MENU_LONG_PRESS,
++                    LineageSettings.System.KEY_MENU_LONG_PRESS_ACTION,
++                    LineageSettings.System.KEY_MENU_LONG_PRESS_CUSTOM_APP },
++            { KEY_ASSIST_PRESS,
++                    LineageSettings.System.KEY_ASSIST_ACTION,
++                    LineageSettings.System.KEY_ASSIST_ACTION_CUSTOM_APP },
++            { KEY_ASSIST_LONG_PRESS,
++                    LineageSettings.System.KEY_ASSIST_LONG_PRESS_ACTION,
++                    LineageSettings.System.KEY_ASSIST_LONG_PRESS_CUSTOM_APP },
++            { KEY_APP_SWITCH_PRESS,
++                    LineageSettings.System.KEY_APP_SWITCH_ACTION,
++                    LineageSettings.System.KEY_APP_SWITCH_ACTION_CUSTOM_APP },
++            { KEY_APP_SWITCH_LONG_PRESS,
++                    LineageSettings.System.KEY_APP_SWITCH_LONG_PRESS_ACTION,
++                    LineageSettings.System.KEY_APP_SWITCH_LONG_PRESS_CUSTOM_APP },
++            { KEY_NAVIGATION_APP_SWITCH_LONG_PRESS,
++                    LineageSettings.System.KEY_APP_SWITCH_LONG_PRESS_ACTION,
++                    LineageSettings.System.KEY_APP_SWITCH_LONG_PRESS_CUSTOM_APP },
++            { KEY_EDGE_LONG_SWIPE,
++                    LineageSettings.System.KEY_EDGE_LONG_SWIPE_ACTION,
++                    LineageSettings.System.KEY_EDGE_LONG_SWIPE_CUSTOM_APP },
++    };
++
++    /**
++     * The BlackBerry KEY2 key preferences, the setting holding each gesture's action, and the
++     * setting holding the app launched when that gesture is set to "Custom app".
++     */
++    private static final String[][] BLACKBERRY_ACTION_TRIGGERS = buildBlackBerryTriggers();
++
++    private static String[][] buildBlackBerryTriggers() {
++        final List<String[]> triggers = new ArrayList<>();
++        for (BlackBerryKeys.Key key : BlackBerryKeys.Key.values()) {
++            for (BlackBerryKeys.Gesture gesture : BlackBerryKeys.Gesture.values()) {
++                triggers.add(new String[] {
++                        blackBerryPreferenceKey(key, gesture),
++                        BlackBerryKeys.actionSetting(key, gesture),
++                        BlackBerryKeys.customAppSetting(key, gesture),
++                });
++            }
++        }
++        return triggers.toArray(new String[0][]);
++    }
++
++    private static String blackBerryPreferenceKey(BlackBerryKeys.Key key,
++            BlackBerryKeys.Gesture gesture) {
++        return "blackberry_keys_" + key.name().toLowerCase(Locale.ROOT)
++                + "_" + gesture.name().toLowerCase(Locale.ROOT);
++    }
++
++    private static String[] findBlackBerryTrigger(String prefKey) {
++        if (prefKey == null) {
++            return null;
++        }
++        for (String[] trigger : BLACKBERRY_ACTION_TRIGGERS) {
++            if (trigger[0].equals(prefKey)) {
++                return trigger;
++            }
++        }
++        return null;
++    }
++
+     private ListPreference mBackLongPressAction;
+     private ListPreference mHomeLongPressAction;
+     private ListPreference mHomeDoubleTapAction;
+@@ -178,6 +285,13 @@ public class ButtonSettings extends SettingsPreferenceFragment
+         final PreferenceCategory volumeCategory = prefScreen.findPreference(CATEGORY_VOLUME);
+         final PreferenceCategory cameraCategory = prefScreen.findPreference(CATEGORY_CAMERA);
+         final PreferenceCategory extrasCategory = prefScreen.findPreference(CATEGORY_EXTRAS);
++        final PreferenceCategory symCategory = prefScreen.findPreference(CATEGORY_SYM);
++        final PreferenceCategory functionCategory = prefScreen.findPreference(CATEGORY_FUNCTION);
++        final PreferenceCategory convenienceCategory =
++                prefScreen.findPreference(CATEGORY_CONVENIENCE);
++
++        final boolean showBlackBerryKeys =
++                res.getBoolean(R.bool.config_show_blackberry_hardware_keys);
+ 
+         // Power button ends calls.
+         mPowerEndCall = findPreference(KEY_POWER_END_CALL);
+@@ -195,6 +309,18 @@ public class ButtonSettings extends SettingsPreferenceFragment
+ 
+         mHandler = new Handler(Looper.getMainLooper());
+ 
++        if (showBlackBerryKeys) {
++            // The Convenience key is the Assist key on the KEY2, so it replaces the Search
++            // button category.
++            prefScreen.removePreference(assistCategory);
++            migrateBlackBerryKeys(resolver);
++            initBlackBerryPreferences();
++        } else {
++            prefScreen.removePreference(symCategory);
++            prefScreen.removePreference(functionCategory);
++            prefScreen.removePreference(convenienceCategory);
++        }
++
+         // Force Navigation bar related options
+         mDisableNavigationKeys = findPreference(KEY_DISABLE_NAV_KEYS);
+ 
+@@ -328,7 +454,7 @@ public class ButtonSettings extends SettingsPreferenceFragment
+             prefScreen.removePreference(menuCategory);
+         }
+ 
+-        if (hasAssistKey) {
++        if (hasAssistKey && !showBlackBerryKeys) {
+             if (!showAssistWake) {
+                 assistCategory.removePreference(findPreference(KEY_ASSIST_WAKE_SCREEN));
+             }
+@@ -497,7 +623,7 @@ public class ButtonSettings extends SettingsPreferenceFragment
+             mMenuLongPressAction.setEntryValues(actionValues);
+         }
+ 
+-        if (hasAssistKey) {
++        if (hasAssistKey && !showBlackBerryKeys) {
+             mAssistPressAction.setEntries(actionEntries);
+             mAssistPressAction.setEntryValues(actionValues);
+ 
+@@ -533,6 +659,9 @@ public class ButtonSettings extends SettingsPreferenceFragment
+     public void onResume() {
+         super.onResume();
+ 
++        refreshActionSummaries();
++        refreshBlackBerrySummaries();
++
+         // Power button ends calls.
+         if (mPowerEndCall != null) {
+             final int incallPowerBehavior = Settings.Secure.getInt(getContentResolver(),
+@@ -567,11 +696,373 @@ public class ButtonSettings extends SettingsPreferenceFragment
+         return list;
+     }
+ 
++    /**
++     * Copies the old Settings > Keyboard Secure values into the new per-gesture settings. The old
++     * Home value (3) becomes Default because 3 now means Super. The Function key now has a single
++     * action, so an old long-press action is folded into the short-press setting and long/double
++     * are reset to fall back to it.
++     */
++    private static void migrateBlackBerryKeys(ContentResolver resolver) {
++        for (BlackBerryKeys.Key key : BlackBerryKeys.Key.values()) {
++            final int legacy = Settings.Secure.getIntForUser(resolver,
++                    BlackBerryKeys.legacyActionSetting(key),
++                    BlackBerryKeys.Action.DEFAULT.ordinal(), UserHandle.USER_CURRENT);
++            final int action;
++            switch (legacy) {
++                case 1:
++                    action = BlackBerryKeys.Action.CTRL.ordinal();
++                    break;
++                case 2:
++                    action = BlackBerryKeys.Action.TAB.ordinal();
++                    break;
++                case 4:
++                    action = BlackBerryKeys.Action.CUSTOM_APP.ordinal();
++                    break;
++                default:
++                    action = BlackBerryKeys.Action.DEFAULT.ordinal();
++                    break;
++            }
++
++            final String shortSetting = BlackBerryKeys.actionSetting(key,
++                    BlackBerryKeys.Gesture.SHORT_PRESS);
++            if (LineageSettings.System.getIntForUser(resolver, shortSetting, -1,
++                    UserHandle.USER_CURRENT) < 0) {
++                LineageSettings.System.putIntForUser(resolver, shortSetting, action,
++                        UserHandle.USER_CURRENT);
++            }
++
++            if (action == BlackBerryKeys.Action.CUSTOM_APP.ordinal()) {
++                final String customSetting = BlackBerryKeys.customAppSetting(key,
++                        BlackBerryKeys.Gesture.SHORT_PRESS);
++                if (LineageSettings.System.getStringForUser(resolver, customSetting,
++                        UserHandle.USER_CURRENT) == null) {
++                    final String legacyApp = Settings.Secure.getStringForUser(resolver,
++                            BlackBerryKeys.legacyCustomAppSetting(key),
++                            UserHandle.USER_CURRENT);
++                    if (legacyApp != null) {
++                        LineageSettings.System.putStringForUser(resolver, customSetting,
++                                legacyApp, UserHandle.USER_CURRENT);
++                    }
++                }
++            }
++        }
++
++        final int functionShort = LineageSettings.System.getIntForUser(resolver,
++                LineageSettings.System.BLACKBERRY_KEY_FUNCTION_SHORT_PRESS_ACTION,
++                -1, UserHandle.USER_CURRENT);
++        final int functionLong = LineageSettings.System.getIntForUser(resolver,
++                LineageSettings.System.BLACKBERRY_KEY_FUNCTION_LONG_PRESS_ACTION,
++                -1, UserHandle.USER_CURRENT);
++        if (functionShort == BlackBerryKeys.Action.DEFAULT.ordinal()
++                && functionLong > BlackBerryKeys.Action.DEFAULT.ordinal()) {
++            LineageSettings.System.putIntForUser(resolver,
++                    LineageSettings.System.BLACKBERRY_KEY_FUNCTION_SHORT_PRESS_ACTION,
++                    functionLong, UserHandle.USER_CURRENT);
++            if (functionLong == BlackBerryKeys.Action.CUSTOM_APP.ordinal()) {
++                final String longApp = LineageSettings.System.getStringForUser(resolver,
++                        LineageSettings.System.BLACKBERRY_KEY_FUNCTION_LONG_PRESS_CUSTOM_APP,
++                        UserHandle.USER_CURRENT);
++                if (longApp != null) {
++                    LineageSettings.System.putStringForUser(resolver,
++                            LineageSettings.System.BLACKBERRY_KEY_FUNCTION_SHORT_PRESS_CUSTOM_APP,
++                            longApp, UserHandle.USER_CURRENT);
++                }
++            }
++        }
++        if (functionShort >= 0) {
++            // The Function key has one action; long and double fall back to it.
++            LineageSettings.System.putIntForUser(resolver,
++                    LineageSettings.System.BLACKBERRY_KEY_FUNCTION_LONG_PRESS_ACTION,
++                    BlackBerryKeys.Action.DEFAULT.ordinal(), UserHandle.USER_CURRENT);
++            LineageSettings.System.putIntForUser(resolver,
++                    LineageSettings.System.BLACKBERRY_KEY_FUNCTION_DOUBLE_PRESS_ACTION,
++                    BlackBerryKeys.Action.DEFAULT.ordinal(), UserHandle.USER_CURRENT);
++        }
++    }
++
++    private void initBlackBerryPreferences() {
++        for (BlackBerryKeys.Key key : BlackBerryKeys.Key.values()) {
++            for (BlackBerryKeys.Gesture gesture : BlackBerryKeys.Gesture.values()) {
++                final ListPreference pref =
++                        findPreference(blackBerryPreferenceKey(key, gesture));
++                if (pref == null) {
++                    continue;
++                }
++                final int action = BlackBerryKeys.getAction(getContentResolver(), key, gesture,
++                        UserHandle.USER_CURRENT);
++                pref.setValue(Integer.toString(action));
++                pref.setOnPreferenceChangeListener(this);
++                updateBlackBerrySummary(pref, action);
++            }
++        }
++
++        final SwitchPreferenceCompat wakeScreen =
++                findPreference(KEY_CONVENIENCE_WAKE_SCREEN);
++        if (wakeScreen != null) {
++            wakeScreen.setChecked(LineageSettings.System.getInt(getContentResolver(),
++                    LineageSettings.System.ASSIST_WAKE_SCREEN, 0) == 1);
++            wakeScreen.setOnPreferenceChangeListener((preference, newValue) -> {
++                LineageSettings.System.putInt(getContentResolver(),
++                        LineageSettings.System.ASSIST_WAKE_SCREEN,
++                        (Boolean) newValue ? 1 : 0);
++                return true;
++            });
++        }
++    }
++
++    private void refreshBlackBerrySummaries() {
++        for (BlackBerryKeys.Key key : BlackBerryKeys.Key.values()) {
++            for (BlackBerryKeys.Gesture gesture : BlackBerryKeys.Gesture.values()) {
++                final ListPreference pref =
++                        findPreference(blackBerryPreferenceKey(key, gesture));
++                if (pref == null) {
++                    continue;
++                }
++                try {
++                    updateBlackBerrySummary(pref, Integer.parseInt(pref.getValue()));
++                } catch (NumberFormatException e) {
++                    // Keep the summary the preference already has.
++                }
++            }
++        }
++    }
++
++    private void updateBlackBerrySummary(ListPreference pref, int action) {
++        if (action == BlackBerryKeys.Action.CUSTOM_APP.ordinal()) {
++            final String[] trigger = findBlackBerryTrigger(pref.getKey());
++            pref.setSummary(getCustomAppSummary(trigger != null ? trigger[2] : null));
++            return;
++        }
++        final int index = pref.findIndexOfValue(Integer.toString(action));
++        if (index >= 0) {
++            pref.setSummary(pref.getEntries()[index]);
++        }
++    }
++
++    private void handleBlackBerryListChange(ListPreference pref, Object newValue) {
++        final String[] trigger = findBlackBerryTrigger(pref.getKey());
++        if (trigger == null) {
++            return;
++        }
++        final int action = Integer.parseInt((String) newValue);
++        if (LineageSettings.System.BLACKBERRY_KEY_FUNCTION_SHORT_PRESS_ACTION.equals(
++                trigger[1])) {
++            // The Function key has a single action; clear old gesture overrides so the
++            // long and double presses fall back to the selected action.
++            LineageSettings.System.putIntForUser(getContentResolver(),
++                    LineageSettings.System.BLACKBERRY_KEY_FUNCTION_LONG_PRESS_ACTION,
++                    BlackBerryKeys.Action.DEFAULT.ordinal(), UserHandle.USER_CURRENT);
++            LineageSettings.System.putIntForUser(getContentResolver(),
++                    LineageSettings.System.BLACKBERRY_KEY_FUNCTION_DOUBLE_PRESS_ACTION,
++                    BlackBerryKeys.Action.DEFAULT.ordinal(), UserHandle.USER_CURRENT);
++        }
++        LineageSettings.System.putIntForUser(getContentResolver(), trigger[1], action,
++                UserHandle.USER_CURRENT);
++        updateBlackBerrySummary(pref, action);
++        if (action == BlackBerryKeys.Action.CUSTOM_APP.ordinal()) {
++            // The action list is still closing, so open the app picker once it is gone.
++            mHandler.post(() -> showAppPicker(pref, trigger[2], true));
++        }
++    }
++
+     private void handleListChange(ListPreference pref, Object newValue, String setting) {
+         String value = (String) newValue;
+         int index = pref.findIndexOfValue(value);
+         pref.setSummary(pref.getEntries()[index]);
+         LineageSettings.System.putInt(getContentResolver(), setting, Integer.parseInt(value));
++
++        final String[] trigger = findTrigger(pref.getKey());
++        if (trigger != null) {
++            final int action = Integer.parseInt(value);
++            updateActionSummary(pref.getKey(), action);
++            syncTwinActions(trigger, action);
++            if (action == Action.LAUNCH_APP.ordinal()) {
++                // The action list is still closing, so open the app picker once it is gone.
++                mHandler.post(() -> showAppPicker(pref));
++            }
++        }
++    }
++
++    /**
++     * Hardware keys and their navigation bar counterparts write the same action setting, so
++     * keep both preferences showing the same value.
++     */
++    private void syncTwinActions(String[] trigger, int action) {
++        for (String[] other : ACTION_TRIGGERS) {
++            if (other[1].equals(trigger[1]) && !other[0].equals(trigger[0])) {
++                final ListPreference twin = findPreference(other[0]);
++                if (twin != null) {
++                    twin.setValue(Integer.toString(action));
++                    updateActionSummary(other[0], action);
++                }
++            }
++        }
++    }
++
++    private static String[] findTrigger(String prefKey) {
++        for (String[] trigger : ACTION_TRIGGERS) {
++            if (trigger[0].equals(prefKey)) {
++                return trigger;
++            }
++        }
++        return null;
++    }
++
++    private void refreshActionSummaries() {
++        for (String[] trigger : ACTION_TRIGGERS) {
++            updateActionSummary(trigger[0]);
++        }
++    }
++
++    private void updateActionSummary(String prefKey) {
++        final ListPreference pref = findPreference(prefKey);
++        if (pref == null || findTrigger(prefKey) == null) {
++            return;
++        }
++        final int action;
++        try {
++            action = Integer.parseInt(pref.getValue());
++        } catch (NumberFormatException e) {
++            return;
++        }
++        updateActionSummary(prefKey, action);
++    }
++
++    private void updateActionSummary(String prefKey, int action) {
++        final ListPreference pref = findPreference(prefKey);
++        final String[] trigger = findTrigger(prefKey);
++        if (pref == null || trigger == null) {
++            return;
++        }
++        if (action == Action.LAUNCH_APP.ordinal()) {
++            pref.setSummary(getCustomAppSummary(trigger[2]));
++        } else {
++            final int index = pref.findIndexOfValue(Integer.toString(action));
++            if (index >= 0) {
++                pref.setSummary(pref.getEntries()[index]);
++            }
++        }
++    }
++
++    private CharSequence getCustomAppSummary(String appKey) {
++        CharSequence label = null;
++        final String flat = appKey != null
++                ? LineageSettings.System.getStringForUser(getContentResolver(), appKey,
++                        UserHandle.USER_CURRENT)
++                : null;
++        if (flat != null) {
++            final ComponentName component = ComponentName.unflattenFromString(flat);
++            if (component != null) {
++                final PackageManager pm = requireActivity().getPackageManager();
++                final Intent intent = new Intent(Intent.ACTION_MAIN)
++                        .addCategory(Intent.CATEGORY_LAUNCHER)
++                        .setComponent(component);
++                final ResolveInfo info = pm.resolveActivity(intent, 0);
++                if (info != null) {
++                    label = info.loadLabel(pm);
++                }
++            }
++        }
++        if (label == null) {
++            label = getString(R.string.hardware_keys_custom_app_none);
++        }
++        return getString(R.string.hardware_keys_custom_app_summary_format, label);
++    }
++
++    private void showAppPicker(ListPreference preference) {
++        final String[] trigger = findTrigger(preference.getKey());
++        if (trigger != null) {
++            showAppPicker(preference, trigger[2], false);
++        }
++    }
++
++    private void showAppPicker(ListPreference preference, String appKey, boolean blackBerry) {
++        final Context context = requireContext();
++        final List<AppEntry> apps = loadAppEntries(context);
++        if (apps.isEmpty()) {
++            return;
++        }
++        new AlertDialog.Builder(context)
++                .setTitle(preference.getTitle())
++                .setAdapter(new AppPickerAdapter(context, apps), (dialog, which) -> {
++                    final AppEntry app = apps.get(which);
++                    LineageSettings.System.putStringForUser(getContentResolver(), appKey,
++                            app.value, UserHandle.USER_CURRENT);
++                    if (blackBerry) {
++                        updateBlackBerrySummary(preference,
++                                BlackBerryKeys.Action.CUSTOM_APP.ordinal());
++                    } else {
++                        updateActionSummary(preference.getKey(), Action.LAUNCH_APP.ordinal());
++                    }
++                    dialog.dismiss();
++                })
++                .setNegativeButton(android.R.string.cancel, null)
++                .show();
++    }
++
++    private static List<AppEntry> loadAppEntries(Context context) {
++        final PackageManager pm = context.getPackageManager();
++        final Intent launcher = new Intent(Intent.ACTION_MAIN)
++                .addCategory(Intent.CATEGORY_LAUNCHER);
++        final List<ResolveInfo> resolved = pm.queryIntentActivities(launcher, 0);
++        resolved.sort((a, b) -> a.loadLabel(pm).toString()
++                .compareToIgnoreCase(b.loadLabel(pm).toString()));
++        final List<AppEntry> apps = new ArrayList<>(resolved.size());
++        for (ResolveInfo info : resolved) {
++            final ActivityInfo ai = info.activityInfo;
++            apps.add(new AppEntry(ai.loadLabel(pm),
++                    new ComponentName(ai.packageName, ai.name).flattenToString(),
++                    ai.loadIcon(pm)));
++        }
++        return apps;
++    }
++
++    private static final class AppEntry {
++        final CharSequence label;
++        final String value;
++        final Drawable icon;
++
++        AppEntry(CharSequence label, String value, Drawable icon) {
++            this.label = label;
++            this.value = value;
++            this.icon = icon;
++        }
++    }
++
++    private static final class AppPickerAdapter extends BaseAdapter {
++        private final LayoutInflater mInflater;
++        private final List<AppEntry> mApps;
++
++        AppPickerAdapter(Context context, List<AppEntry> apps) {
++            mInflater = LayoutInflater.from(context);
++            mApps = apps;
++        }
++
++        @Override
++        public int getCount() {
++            return mApps.size();
++        }
++
++        @Override
++        public AppEntry getItem(int position) {
++            return mApps.get(position);
++        }
++
++        @Override
++        public long getItemId(int position) {
++            return position;
++        }
++
++        @Override
++        public View getView(int position, View convertView, ViewGroup parent) {
++            final View view = convertView != null
++                    ? convertView
++                    : mInflater.inflate(R.layout.app_picker_item, parent, false);
++            final AppEntry app = getItem(position);
++            ((ImageView) view.findViewById(R.id.app_icon)).setImageDrawable(app.icon);
++            ((TextView) view.findViewById(R.id.app_name)).setText(app.label);
++            return view;
++        }
+     }
+ 
+     private void handleSystemListChange(ListPreference pref, Object newValue, String setting) {
+@@ -642,6 +1133,9 @@ public class ButtonSettings extends SettingsPreferenceFragment
+             LineageSettings.System.putInt(getContentResolver(),
+                     LineageSettings.System.ENABLE_TASKBAR, ((Boolean) newValue) ? 1 : 0);
+             return true;
++        } else if (findBlackBerryTrigger(preference.getKey()) != null) {
++            handleBlackBerryListChange((ListPreference) preference, newValue);
++            return true;
+         }
+         return false;
+     }
+@@ -853,6 +1347,23 @@ public class ButtonSettings extends SettingsPreferenceFragment
+         public Set<String> getNonIndexableKeys(Context context) {
+             final Set<String> result = new ArraySet<>();
+ 
++            if (context.getResources().getBoolean(
++                    R.bool.config_show_blackberry_hardware_keys)) {
++                // The Convenience key replaces the Search button category on the KEY2.
++                result.add(CATEGORY_ASSIST);
++                result.add(KEY_ASSIST_PRESS);
++                result.add(KEY_ASSIST_LONG_PRESS);
++                result.add(KEY_ASSIST_WAKE_SCREEN);
++            } else {
++                result.add(CATEGORY_SYM);
++                result.add(CATEGORY_FUNCTION);
++                result.add(CATEGORY_CONVENIENCE);
++                result.add(KEY_CONVENIENCE_WAKE_SCREEN);
++                for (String[] trigger : BLACKBERRY_ACTION_TRIGGERS) {
++                    result.add(trigger[0]);
++                }
++            }
++
+             if (!TelephonyUtils.isVoiceCapable(context)) {
+                 result.add(KEY_POWER_END_CALL);
+                 result.add(KEY_HOME_ANSWER_CALL);

@@ -55,9 +55,9 @@ PRODUCT_PACKAGES += \
 PRODUCT_COPY_FILES += \
     $(DEVICE_PATH)/prebuilt/com.lokker.app.privapp-permissions.xml:$(TARGET_COPY_OUT_SYSTEM_EXT)/etc/permissions/com.lokker.app.privapp-permissions.xml
 
-# K12KB keyboard app
-PRODUCT_PACKAGES += \
-    K12KB
+# K12KB keyboard app (removed per user request)
+# PRODUCT_PACKAGES += \
+#     K12KB
 
 # Touchkeypad
 PRODUCT_COPY_FILES += \
@@ -71,6 +71,10 @@ PRODUCT_COPY_FILES += \
 # Device settings
 PRODUCT_PACKAGES += \
     BlackBerrySettings_athena
+
+# Collect logs (BlackBerry settings > Troubleshooting)
+PRODUCT_PACKAGES += \
+    collect-diagnostics-service
 
 # Goodix shims
 PRODUCT_PACKAGES += \

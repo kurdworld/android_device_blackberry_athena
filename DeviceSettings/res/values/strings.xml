@@ -73,4 +73,18 @@
     <string name="legacy_app_google_play_title">View on Google Play</string>
     <string name="legacy_app_mirror_title">Install APK from Archive.org</string>
     <string name="legacy_app_no_link_handler">Unable to open Google Play. Install or enable the Google Play Store, or use the APK download option instead.</string>
+
+    <string name="troubleshooting_category">Troubleshooting</string>
+    <string name="collect_logs_title">Collect logs</string>
+    <string name="collect_logs_entry_summary">Save a diagnostic report to share when reporting a problem</string>
+    <string name="collect_logs_info">Saves system logs, crash reports and device state as one file in your Download folder, to share when reporting a problem. Phone numbers, e-mail, MAC and IP addresses, card numbers, Wi-Fi names, locations and the serial number are removed. Check the file before you share it.</string>
+    <string name="collect_logs_button_summary">Takes a few minutes</string>
+    <string name="collect_logs_running">Collecting logs…</string>
+    <string name="collect_logs_running_summary">This can take a few minutes. You can leave this screen.</string>
+    <string name="collect_logs_saving">Saving to Download…</string>
+    <string name="collect_logs_failed">Couldn\'t collect logs</string>
+    <string name="collect_logs_failed_summary">Try again. If it keeps failing, restart the phone and try once more.</string>
+    <string name="collect_logs_saved">Logs saved</string>
+    <string name="collect_logs_saved_summary">Saved to Download/%1$s</string>
+    <string name="collect_logs_share">Share</string>
 </resources>

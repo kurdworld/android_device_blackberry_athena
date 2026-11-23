@@ -2207,6 +2207,10 @@
         <ctl name="HPHR" value="Switch" />
     </path>
 
+    <path name="voice-headset">
+        <path name="voice-headphones" />
+    </path>
+
     <path name="voice-line">
         <path name="voice-headphones" />
     </path>

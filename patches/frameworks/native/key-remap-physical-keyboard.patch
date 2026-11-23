@@ -1,0 +1,19 @@
+diff --git a/services/inputflinger/reader/InputDevice.cpp b/services/inputflinger/reader/InputDevice.cpp
+index 5000fb73e0..e5c32774aa 100644
+--- a/services/inputflinger/reader/InputDevice.cpp
++++ b/services/inputflinger/reader/InputDevice.cpp
+@@ -457,10 +457,12 @@ std::list<NotifyArgs> InputDevice::configureInternal(nsecs_t when,
+         if (!changes.any() || changes.test(InputReaderConfiguration::Change::KEY_REMAPPING)) {
+             const bool isKeyboard =
+                     (mSources & AINPUT_SOURCE_KEYBOARD) == AINPUT_SOURCE_KEYBOARD;
+-            const bool isFullKeyboard = isKeyboard && (mKeyboardType == KeyboardType::ALPHABETIC);
+             const bool isPhysicalKeyboard = isKeyboard && !mIsVirtualDevice;
+             std::unordered_map<int32_t /* fromKeyCode */, int32_t /* toKeyCode */> keyRemapping;
+-            if (isPhysicalKeyboard && isFullKeyboard) {
++            // Apply the user-configured key remapping to every physical keyboard, not only
++            // alphabetic ones. The BlackBerry Convenience key (gpio-keys) is a non-alphabetic
++            // keyboard and must honour the same remapping as the built-in keypad.
++            if (isPhysicalKeyboard) {
+                 for (const auto& [fromKeyCode, toKeyCode] : readerConfig.keyRemapping) {
+                     keyRemapping.insert_or_assign(fromKeyCode, toKeyCode);
+                 }

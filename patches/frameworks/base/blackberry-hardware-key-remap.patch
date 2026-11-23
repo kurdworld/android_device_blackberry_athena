@@ -1,0 +1,631 @@
+diff --git a/services/core/java/com/android/server/policy/PhoneWindowManager.java b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+--- a/services/core/java/com/android/server/policy/PhoneWindowManager.java
++++ b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+@@ -279,6 +279,7 @@
+ 
+ import org.lineageos.internal.buttons.LineageButtons;
+ import org.lineageos.internal.util.ActionUtils;
++import org.lineageos.internal.util.BlackBerryKeys;
+ 
+ import java.io.File;
+ import java.io.FileNotFoundException;
+@@ -690,6 +691,37 @@
+     private Action mAppSwitchLongPressAction;
+     private Action mEdgeLongSwipeAction;
+ 
++    // BlackBerry KEY2 Sym, Function and Convenience key gestures.
++    // 0 = Default, 1 = Ctrl, 2 = Tab, 3 = Super, 4 = Custom app.
++    private static final int BB_ACTION_DEFAULT = 0;
++    private static final int BB_ACTION_CTRL = 1;
++    private static final int BB_ACTION_TAB = 2;
++    private static final int BB_ACTION_SUPER = 3;
++    private static final int BB_ACTION_CUSTOM_APP = 4;
++
++    private static final int BB_KEY_COUNT = BlackBerryKeys.Key.values().length;
++    private static final int BB_GESTURE_COUNT = BlackBerryKeys.Gesture.values().length;
++
++    private final int[][] mBbActions = new int[BB_KEY_COUNT][BB_GESTURE_COUNT];
++    private final String[][] mBbCustomApps = new String[BB_KEY_COUNT][BB_GESTURE_COUNT];
++    private final BlackBerryKeyState[] mBbKeyStates = new BlackBerryKeyState[BB_KEY_COUNT];
++
++    private static final class BlackBerryKeyState {
++        boolean active;
++        boolean longPressSent;
++        boolean doublePress;
++        boolean doubleTapPending;
++        boolean shortPressPending;
++        long downTime;
++        int downDeviceId = -1;
++        long lastUpTime;
++        long modifierDownTime;
++        int heldModifier = KeyEvent.KEYCODE_UNKNOWN;
++        int heldMetaState;
++        int heldClearMetaState;
++        int heldDeviceId = -1;
++    }
++
+     // support for activating the lock screen while the screen is on
+     private HashSet<Integer> mAllowLockscreenWhenOnDisplays = new HashSet<>();
+     int mLockScreenTimeout;
+@@ -808,6 +840,8 @@
+     // Lineage additions
+     private static final int MSG_TOGGLE_TORCH = 100;
+     private static final int MSG_CAMERA_LONG_PRESS = 101;
++    private static final int MSG_BB_KEY_LONG_PRESS = 102;
++    private static final int MSG_BB_KEY_DOUBLE_TAP_TIMEOUT = 105;
+ 
+     private CameraManager mCameraManager;
+     private String mRearFlashCameraId;
+@@ -912,6 +946,18 @@
+                 case MSG_CAMERA_LONG_PRESS:
+                     mIsLongPress = true;
+                     break;
++                case MSG_BB_KEY_LONG_PRESS:
++                case MSG_BB_KEY_LONG_PRESS + 1:
++                case MSG_BB_KEY_LONG_PRESS + 2:
++                    handleBlackBerryKeyLongPress(msg.what - MSG_BB_KEY_LONG_PRESS,
++                            (Long) msg.obj);
++                    break;
++                case MSG_BB_KEY_DOUBLE_TAP_TIMEOUT:
++                case MSG_BB_KEY_DOUBLE_TAP_TIMEOUT + 1:
++                case MSG_BB_KEY_DOUBLE_TAP_TIMEOUT + 2:
++                    handleBlackBerryDoubleTapTimeout(
++                            msg.what - MSG_BB_KEY_DOUBLE_TAP_TIMEOUT, (Long) msg.obj);
++                    break;
+             }
+         }
+     }
+@@ -1067,6 +1113,16 @@
+             resolver.registerContentObserver(LineageSettings.System.getUriFor(
+                     LineageSettings.System.VOLUME_ANSWER_CALL), false, this,
+                     UserHandle.USER_ALL);
++            for (BlackBerryKeys.Key key : BlackBerryKeys.Key.values()) {
++                for (BlackBerryKeys.Gesture gesture : BlackBerryKeys.Gesture.values()) {
++                    resolver.registerContentObserver(LineageSettings.System.getUriFor(
++                            BlackBerryKeys.actionSetting(key, gesture)), false, this,
++                            UserHandle.USER_ALL);
++                    resolver.registerContentObserver(LineageSettings.System.getUriFor(
++                            BlackBerryKeys.customAppSetting(key, gesture)), false, this,
++                            UserHandle.USER_ALL);
++                }
++            }
+             updateSettings();
+         }
+ 
+@@ -3457,6 +3513,16 @@
+             mSystemNavigationKeysEnabled = Settings.Secure.getIntForUser(resolver,
+                     Settings.Secure.SYSTEM_NAVIGATION_KEYS_ENABLED,
+                     0, UserHandle.USER_CURRENT) == 1;
++            for (BlackBerryKeys.Key key : BlackBerryKeys.Key.values()) {
++                for (BlackBerryKeys.Gesture gesture : BlackBerryKeys.Gesture.values()) {
++                    mBbActions[key.ordinal()][gesture.ordinal()] =
++                            BlackBerryKeys.getAction(resolver, key, gesture,
++                                    UserHandle.USER_CURRENT);
++                    mBbCustomApps[key.ordinal()][gesture.ordinal()] =
++                            BlackBerryKeys.getCustomApp(resolver, key, gesture,
++                                    UserHandle.USER_CURRENT);
++                }
++            }
+             mRingerToggleChord = Settings.Secure.getIntForUser(resolver,
+                     Settings.Secure.VOLUME_HUSH_GESTURE, VOLUME_HUSH_OFF,
+                     UserHandle.USER_CURRENT);
+@@ -3904,6 +3970,503 @@
+                 mInputManager.getAppLaunchBookmarks());
+     }
+ 
++    /**
++     * Returns whether the event comes from the built-in keyboard or the side Convenience key, so
++     * the gesture handling below never affects an external keyboard.
++     */
++    private boolean isBlackBerryKeyboard(KeyEvent event) {
++        if (mInputManager == null) {
++            return false;
++        }
++        final InputDevice device = mInputManager.getInputDevice(event.getDeviceId());
++        if (device == null) {
++            return false;
++        }
++        final String name = device.getName();
++        return name != null && (name.startsWith("stmpe")
++                || "gpio-keys".equals(name) || "gpio_keys".equals(name));
++    }
++
++    private static BlackBerryKeys.Key blackBerryKeyForKeyCode(int keyCode) {
++        switch (keyCode) {
++            case KeyEvent.KEYCODE_SYM:
++                return BlackBerryKeys.Key.SYM;
++            case KeyEvent.KEYCODE_CTRL_RIGHT:
++            case KeyEvent.KEYCODE_FUNCTION:
++                return BlackBerryKeys.Key.FUNCTION;
++            case KeyEvent.KEYCODE_ASSIST:
++                return BlackBerryKeys.Key.CONVENIENCE;
++            default:
++                return null;
++        }
++    }
++
++    private BlackBerryKeyState blackBerryState(BlackBerryKeys.Key key) {
++        final int index = key.ordinal();
++        if (mBbKeyStates[index] == null) {
++            mBbKeyStates[index] = new BlackBerryKeyState();
++        }
++        return mBbKeyStates[index];
++    }
++
++    /**
++     * Whether any gesture of the key is configured. When all three are Default the key keeps its
++     * native behavior and is not intercepted at all.
++     */
++    private boolean isBlackBerryKeyConfigured(BlackBerryKeys.Key key) {
++        for (BlackBerryKeys.Gesture gesture : BlackBerryKeys.Gesture.values()) {
++            if (mBbActions[key.ordinal()][gesture.ordinal()] != BB_ACTION_DEFAULT) {
++                return true;
++            }
++        }
++        return false;
++    }
++
++    /**
++     * Returns the action to run for a gesture. Default on a long or double press keeps the
++     * short-press behavior.
++     */
++    private int blackBerryAction(BlackBerryKeys.Key key, BlackBerryKeys.Gesture gesture) {
++        final int action = mBbActions[key.ordinal()][gesture.ordinal()];
++        if (action == BB_ACTION_DEFAULT && gesture != BlackBerryKeys.Gesture.SHORT_PRESS) {
++            return mBbActions[key.ordinal()][BlackBerryKeys.Gesture.SHORT_PRESS.ordinal()];
++        }
++        return action;
++    }
++
++    /**
++     * Returns the custom app for a gesture, following a Default long or double press back to the
++     * short-press app.
++     */
++    private String blackBerryCustomApp(BlackBerryKeys.Key key,
++            BlackBerryKeys.Gesture gesture) {
++        if (gesture != BlackBerryKeys.Gesture.SHORT_PRESS
++                && mBbActions[key.ordinal()][gesture.ordinal()] == BB_ACTION_DEFAULT) {
++            gesture = BlackBerryKeys.Gesture.SHORT_PRESS;
++        }
++        return mBbCustomApps[key.ordinal()][gesture.ordinal()];
++    }
++
++    private static boolean sameBlackBerryCustomApp(String first, String second) {
++        return first == null ? second == null : first.equals(second);
++    }
++
++    /**
++     * Whether a double press runs something other than the short-press action. Only then does
++     * the short-press action have to wait for the double-tap timeout.
++     */
++    private boolean isBlackBerryDoublePressDistinct(BlackBerryKeys.Key key) {
++        final int shortAction = blackBerryAction(key, BlackBerryKeys.Gesture.SHORT_PRESS);
++        final int doubleAction = blackBerryAction(key, BlackBerryKeys.Gesture.DOUBLE_PRESS);
++        if (shortAction != doubleAction) {
++            return true;
++        }
++        if (shortAction == BB_ACTION_CUSTOM_APP) {
++            return !sameBlackBerryCustomApp(
++                    blackBerryCustomApp(key, BlackBerryKeys.Gesture.SHORT_PRESS),
++                    blackBerryCustomApp(key, BlackBerryKeys.Gesture.DOUBLE_PRESS));
++        }
++        return false;
++    }
++
++    private static boolean isBlackBerryHoldAction(BlackBerryKeys.Key key, int action) {
++        return action == BB_ACTION_CTRL || action == BB_ACTION_SUPER
++                || (action == BB_ACTION_DEFAULT && key == BlackBerryKeys.Key.FUNCTION);
++    }
++
++    private static int blackBerryModifier(BlackBerryKeys.Key key, int action) {
++        switch (action) {
++            case BB_ACTION_CTRL:
++                return KeyEvent.KEYCODE_CTRL_LEFT;
++            case BB_ACTION_SUPER:
++                return KeyEvent.KEYCODE_META_RIGHT;
++            case BB_ACTION_DEFAULT:
++                return key == BlackBerryKeys.Key.FUNCTION
++                        ? KeyEvent.KEYCODE_CTRL_RIGHT : KeyEvent.KEYCODE_UNKNOWN;
++            default:
++                return KeyEvent.KEYCODE_UNKNOWN;
++        }
++    }
++
++    private static int blackBerryModifierMetaState(BlackBerryKeys.Key key, int action) {
++        switch (action) {
++            case BB_ACTION_CTRL:
++                return KeyEvent.META_CTRL_ON | KeyEvent.META_CTRL_LEFT_ON;
++            case BB_ACTION_SUPER:
++                return KeyEvent.META_META_ON | KeyEvent.META_META_RIGHT_ON;
++            case BB_ACTION_DEFAULT:
++                return key == BlackBerryKeys.Key.FUNCTION
++                        ? KeyEvent.META_CTRL_ON | KeyEvent.META_CTRL_RIGHT_ON : 0;
++            default:
++                return 0;
++        }
++    }
++
++    /**
++     * Meta state that has to be added to other keys while this action is held. The Function key
++     * is a real Ctrl Right key, so the input reader already reports Ctrl for it; the other keys
++     * are not modifiers and their Ctrl or Super has to be supplied here.
++     */
++    private static int blackBerryHeldMetaState(int action) {
++        switch (action) {
++            case BB_ACTION_CTRL:
++                return KeyEvent.META_CTRL_ON | KeyEvent.META_CTRL_LEFT_ON;
++            case BB_ACTION_SUPER:
++                return KeyEvent.META_META_ON | KeyEvent.META_META_RIGHT_ON;
++            default:
++                return 0;
++        }
++    }
++
++    /**
++     * Meta state that has to be removed from other keys while this action is held. Holding the
++     * Function key makes the input reader report Ctrl Right, which has to be replaced by Super
++     * when the long press action is Super.
++     */
++    private static int blackBerryClearMetaState(int action) {
++        return action == BB_ACTION_SUPER
++                ? KeyEvent.META_CTRL_ON | KeyEvent.META_CTRL_LEFT_ON
++                        | KeyEvent.META_CTRL_RIGHT_ON
++                : 0;
++    }
++
++    /**
++     * Handles the Sym, Function and Convenience keys before they reach the input dispatcher.
++     * Returns true when the event was consumed.
++     */
++    private boolean interceptBlackBerryKey(KeyEvent event, boolean interactive) {
++        if (!isBlackBerryKeyboard(event)) {
++            return false;
++        }
++        final BlackBerryKeys.Key key = blackBerryKeyForKeyCode(event.getKeyCode());
++        if (key == null) {
++            return false;
++        }
++        final BlackBerryKeyState state = blackBerryState(key);
++        final boolean down = event.getAction() == KeyEvent.ACTION_DOWN;
++
++        if (down) {
++            if (!state.active) {
++                if (event.getRepeatCount() != 0 || !interactive
++                        || !isBlackBerryKeyConfigured(key)) {
++                    return false;
++                }
++                state.active = true;
++                onBlackBerryKeyDown(key, state, event);
++            }
++            return true;
++        }
++
++        if (!state.active) {
++            return false;
++        }
++        onBlackBerryKeyUp(key, state, event);
++        return true;
++    }
++
++    private void onBlackBerryKeyDown(BlackBerryKeys.Key key, BlackBerryKeyState state,
++            KeyEvent event) {
++        final long now = event.getEventTime();
++        final int deviceId = event.getDeviceId();
++        state.downDeviceId = deviceId;
++
++        if (state.doubleTapPending
++                && now - state.lastUpTime <= ViewConfiguration.getDoubleTapTimeout()) {
++            cancelPendingBlackBerryShortPress(key, state);
++            state.doublePress = true;
++            state.longPressSent = false;
++            state.downTime = now;
++            final int action = blackBerryAction(key, BlackBerryKeys.Gesture.DOUBLE_PRESS);
++            if (isBlackBerryHoldAction(key, action)) {
++                holdBlackBerryModifier(state, key, action, now, deviceId);
++            }
++            return;
++        }
++
++        // The double-tap window expired before its handler message was processed.
++        performPendingBlackBerryShortPress(key, state);
++        cancelPendingBlackBerryShortPress(key, state);
++        state.doublePress = false;
++        state.longPressSent = false;
++        state.downTime = now;
++        releaseBlackBerryModifier(state);
++
++        final int action = blackBerryAction(key, BlackBerryKeys.Gesture.SHORT_PRESS);
++        if (isBlackBerryHoldAction(key, action)) {
++            holdBlackBerryModifier(state, key, action, now, deviceId);
++        }
++        scheduleBlackBerryLongPress(key, now);
++    }
++
++    private void onBlackBerryKeyUp(BlackBerryKeys.Key key, BlackBerryKeyState state,
++            KeyEvent event) {
++        mHandler.removeMessages(MSG_BB_KEY_LONG_PRESS + key.ordinal());
++
++        if (event.isCanceled()) {
++            cancelPendingBlackBerryShortPress(key, state);
++            releaseBlackBerryModifier(state);
++            state.active = false;
++            state.longPressSent = false;
++            state.doublePress = false;
++            return;
++        }
++
++        if (!state.longPressSent) {
++            final BlackBerryKeys.Gesture gesture = state.doublePress
++                    ? BlackBerryKeys.Gesture.DOUBLE_PRESS
++                    : BlackBerryKeys.Gesture.SHORT_PRESS;
++            final int action = blackBerryAction(key, gesture);
++
++            if (gesture == BlackBerryKeys.Gesture.SHORT_PRESS
++                    && isBlackBerryDoublePressDistinct(key)) {
++                // A distinct double-press action is configured, so hold the short-press
++                // action back until the double-tap timeout expires. This way a double
++                // press runs only the double-press action.
++                releaseBlackBerryModifier(state);
++                state.shortPressPending = true;
++                state.doubleTapPending = true;
++                state.lastUpTime = event.getEventTime();
++                scheduleBlackBerryDoubleTapTimeout(key, event.getEventTime());
++            } else {
++                if (isBlackBerryHoldAction(key, action)) {
++                    // The modifier was held from key-down.
++                    releaseBlackBerryModifier(state);
++                } else {
++                    releaseBlackBerryModifier(state);
++                    performBlackBerryTapAction(key, gesture, action);
++                }
++
++                if (gesture == BlackBerryKeys.Gesture.SHORT_PRESS) {
++                    state.doubleTapPending = true;
++                    state.lastUpTime = event.getEventTime();
++                } else {
++                    state.doubleTapPending = false;
++                }
++            }
++        } else {
++            cancelPendingBlackBerryShortPress(key, state);
++            releaseBlackBerryModifier(state);
++        }
++
++        state.active = false;
++        state.doublePress = false;
++    }
++
++    private void cancelPendingBlackBerryShortPress(BlackBerryKeys.Key key,
++            BlackBerryKeyState state) {
++        mHandler.removeMessages(MSG_BB_KEY_DOUBLE_TAP_TIMEOUT + key.ordinal());
++        state.shortPressPending = false;
++        state.doubleTapPending = false;
++    }
++
++    private void performPendingBlackBerryShortPress(BlackBerryKeys.Key key,
++            BlackBerryKeyState state) {
++        if (!state.shortPressPending) {
++            return;
++        }
++        state.shortPressPending = false;
++        state.doubleTapPending = false;
++        final int action = blackBerryAction(key, BlackBerryKeys.Gesture.SHORT_PRESS);
++        if (!isBlackBerryHoldAction(key, action)) {
++            performBlackBerryTapAction(key, BlackBerryKeys.Gesture.SHORT_PRESS, action);
++        }
++    }
++
++    private void scheduleBlackBerryDoubleTapTimeout(BlackBerryKeys.Key key, long upTime) {
++        final Message msg = mHandler.obtainMessage(
++                MSG_BB_KEY_DOUBLE_TAP_TIMEOUT + key.ordinal(), Long.valueOf(upTime));
++        msg.setAsynchronous(true);
++        mHandler.sendMessageDelayed(msg, ViewConfiguration.getDoubleTapTimeout());
++    }
++
++    private void handleBlackBerryDoubleTapTimeout(int keyIndex, long upTime) {
++        final BlackBerryKeys.Key key = BlackBerryKeys.Key.values()[keyIndex];
++        final BlackBerryKeyState state = blackBerryState(key);
++        if (state.active || !state.shortPressPending || state.lastUpTime != upTime) {
++            return;
++        }
++        performPendingBlackBerryShortPress(key, state);
++    }
++
++    private void scheduleBlackBerryLongPress(BlackBerryKeys.Key key, long downTime) {
++        final Message msg = mHandler.obtainMessage(MSG_BB_KEY_LONG_PRESS + key.ordinal(),
++                Long.valueOf(downTime));
++        msg.setAsynchronous(true);
++        mHandler.sendMessageDelayed(msg, ViewConfiguration.getLongPressTimeout());
++    }
++
++    private void handleBlackBerryKeyLongPress(int keyIndex, long downTime) {
++        final BlackBerryKeys.Key key = BlackBerryKeys.Key.values()[keyIndex];
++        final BlackBerryKeyState state = blackBerryState(key);
++        if (!state.active || state.doublePress || state.longPressSent
++                || state.downTime != downTime) {
++            return;
++        }
++
++        state.longPressSent = true;
++        final int action = blackBerryAction(key, BlackBerryKeys.Gesture.LONG_PRESS);
++        if (isBlackBerryHoldAction(key, action)) {
++            holdBlackBerryModifier(state, key, action, downTime, state.downDeviceId);
++        } else {
++            releaseBlackBerryModifier(state);
++            if (key == BlackBerryKeys.Key.FUNCTION) {
++                stripBlackBerryNativeMetaState(state, state.downDeviceId);
++            }
++            performBlackBerryTapAction(key, BlackBerryKeys.Gesture.LONG_PRESS, action);
++        }
++    }
++
++    private void holdBlackBerryModifier(BlackBerryKeyState state, BlackBerryKeys.Key key,
++            int action, long downTime, int deviceId) {
++        final int keyCode = blackBerryModifier(key, action);
++        if (keyCode == KeyEvent.KEYCODE_UNKNOWN) {
++            return;
++        }
++        if (state.heldModifier != keyCode) {
++            releaseBlackBerryModifier(state);
++            state.heldModifier = keyCode;
++            state.modifierDownTime = downTime;
++            injectBlackBerryKey(keyCode, KeyEvent.ACTION_DOWN, downTime,
++                    SystemClock.uptimeMillis(), 0, blackBerryModifierMetaState(key, action),
++                    KeyEvent.FLAG_FROM_SYSTEM, InputDevice.SOURCE_KEYBOARD);
++        }
++        state.heldMetaState = blackBerryHeldMetaState(action);
++        state.heldClearMetaState = blackBerryClearMetaState(action);
++        state.heldDeviceId = deviceId;
++    }
++
++    private void releaseBlackBerryModifier(BlackBerryKeyState state) {
++        if (state.heldModifier != KeyEvent.KEYCODE_UNKNOWN) {
++            injectBlackBerryKey(state.heldModifier, KeyEvent.ACTION_UP,
++                    state.modifierDownTime, SystemClock.uptimeMillis(), 0, 0,
++                    KeyEvent.FLAG_FROM_SYSTEM, InputDevice.SOURCE_KEYBOARD);
++            state.heldModifier = KeyEvent.KEYCODE_UNKNOWN;
++        }
++        state.heldMetaState = 0;
++        state.heldClearMetaState = 0;
++        state.heldDeviceId = -1;
++    }
++
++    /**
++     * Keeps the Function key's native Ctrl Right meta state from reaching other keys after a
++     * long press action that is not Ctrl or Super.
++     */
++    private void stripBlackBerryNativeMetaState(BlackBerryKeyState state, int deviceId) {
++        state.heldMetaState = 0;
++        state.heldClearMetaState = KeyEvent.META_CTRL_ON | KeyEvent.META_CTRL_LEFT_ON
++                | KeyEvent.META_CTRL_RIGHT_ON;
++        state.heldDeviceId = deviceId;
++    }
++
++    /**
++     * Rewrites the meta state of keys pressed while a Sym, Function or Convenience key is held
++     * as Ctrl or Super. The input reader only derives meta state from real modifier keys, so
++     * without this a held Sym/Ctrl would not affect the keys pressed with it.
++     */
++    private boolean rewriteBlackBerryMetaState(KeyEvent event, boolean isInjected,
++            boolean interactive) {
++        if (!interactive || isInjected) {
++            return false;
++        }
++        final int deviceId = event.getDeviceId();
++        int add = 0;
++        int clear = 0;
++        for (BlackBerryKeyState state : mBbKeyStates) {
++            if (state == null || state.heldDeviceId != deviceId) {
++                continue;
++            }
++            add |= state.heldMetaState;
++            clear |= state.heldClearMetaState;
++        }
++        if (add == 0 && clear == 0) {
++            return false;
++        }
++        final int oldMetaState = event.getMetaState();
++        final int metaState = (oldMetaState & ~clear) | add;
++        if (metaState == oldMetaState) {
++            return false;
++        }
++        injectBlackBerryKey(event.getKeyCode(), event.getAction(), event.getDownTime(),
++                event.getEventTime(), event.getRepeatCount(), metaState, event.getFlags(),
++                event.getSource());
++        return true;
++    }
++
++    private void performBlackBerryTapAction(BlackBerryKeys.Key key,
++            BlackBerryKeys.Gesture gesture, int action) {
++        switch (action) {
++            case BB_ACTION_CTRL:
++                sendBlackBerryTap(KeyEvent.KEYCODE_CTRL_LEFT);
++                break;
++            case BB_ACTION_TAB:
++                sendBlackBerryTap(KeyEvent.KEYCODE_TAB);
++                break;
++            case BB_ACTION_SUPER:
++                sendBlackBerryTap(KeyEvent.KEYCODE_META_RIGHT);
++                break;
++            case BB_ACTION_CUSTOM_APP:
++                launchBlackBerryCustomApp(key, gesture);
++                break;
++            case BB_ACTION_DEFAULT:
++            default:
++                switch (key) {
++                    case SYM:
++                        sendBlackBerryTap(KeyEvent.KEYCODE_SYM);
++                        break;
++                    case FUNCTION:
++                        sendBlackBerryTap(KeyEvent.KEYCODE_CTRL_RIGHT);
++                        break;
++                    case CONVENIENCE:
++                        sendBlackBerryTap(KeyEvent.KEYCODE_ASSIST);
++                        break;
++                }
++                break;
++        }
++    }
++
++    private void launchBlackBerryCustomApp(BlackBerryKeys.Key key,
++            BlackBerryKeys.Gesture gesture) {
++        final String flat = blackBerryCustomApp(key, gesture);
++        if (flat == null || flat.isEmpty()) {
++            return;
++        }
++        final ComponentName component = ComponentName.unflattenFromString(flat);
++        if (component == null) {
++            Log.w(TAG, "Invalid custom app component: " + flat);
++            return;
++        }
++        final Intent intent = new Intent(Intent.ACTION_MAIN)
++                .addCategory(Intent.CATEGORY_LAUNCHER)
++                .setComponent(component)
++                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
++                        | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
++        mHandler.post(() -> {
++            try {
++                mContext.startActivityAsUser(intent, UserHandle.of(mCurrentUserId));
++            } catch (Exception e) {
++                Log.w(TAG, "Unable to launch custom app " + component, e);
++            }
++        });
++    }
++
++    private void sendBlackBerryTap(int keyCode) {
++        final long now = SystemClock.uptimeMillis();
++        injectBlackBerryKey(keyCode, KeyEvent.ACTION_DOWN, now, now, 0, 0,
++                KeyEvent.FLAG_FROM_SYSTEM, InputDevice.SOURCE_KEYBOARD);
++        injectBlackBerryKey(keyCode, KeyEvent.ACTION_UP, now, now, 0, 0,
++                KeyEvent.FLAG_FROM_SYSTEM, InputDevice.SOURCE_KEYBOARD);
++    }
++
++    private void injectBlackBerryKey(int keyCode, int action, long downTime, long eventTime,
++            int repeatCount, int metaState, int flags, int source) {
++        if (mInputManager == null) {
++            return;
++        }
++        final KeyEvent event = new KeyEvent(downTime, eventTime, action, keyCode, repeatCount,
++                metaState, KeyCharacterMap.VIRTUAL_KEYBOARD, 0, flags, source);
++        mInputManager.injectInputEvent(event, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
++    }
++
+     // TODO(b/117479243): handle it in InputPolicy
+     // TODO (b/283241997): Add the remaining keyboard shortcut logging after refactoring
+     /** {@inheritDoc} */
+@@ -5081,6 +5644,15 @@
+         final boolean isInjected = (policyFlags & WindowManagerPolicy.FLAG_INJECTED) != 0;
+         final boolean longPress = (event.getFlags() & KeyEvent.FLAG_LONG_PRESS) != 0;
+ 
++        // BlackBerry KEY2 key gestures are consumed here, before the key gesture detector runs.
++        if (interceptBlackBerryKey(event, interactive)) {
++            return 0;
++        }
++        // Keys pressed while a BlackBerry key is held as Ctrl or Super need its meta state.
++        if (rewriteBlackBerryMetaState(event, isInjected, interactive)) {
++            return 0;
++        }
++
+         // If screen is off then we treat the case where the keyguard is open but hidden
+         // the same as if it were open and in front.
+         // This will prevent any keys other than the power button from waking the screen

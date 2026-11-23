@@ -1,0 +1,61 @@
+diff --git a/res/layout/homepage_preference.xml b/res/layout/homepage_preference.xml
+index 3f57592e3e4..98108f8adb6 100644
+--- a/res/layout/homepage_preference.xml
++++ b/res/layout/homepage_preference.xml
+@@ -22,7 +22,7 @@
+     android:layout_height="wrap_content"
+     android:paddingStart="?android:attr/listPreferredItemPaddingStart"
+     android:paddingEnd="?android:attr/listPreferredItemPaddingEnd"
+-    android:minHeight="72dp"
++    android:minHeight="60dp"
+     android:gravity="center_vertical"
+     android:background="?android:attr/selectableItemBackground"
+     android:clipToPadding="false"
+@@ -52,8 +52,8 @@
+         android:layout_width="0dp"
+         android:layout_height="wrap_content"
+         android:layout_weight="1"
+-        android:paddingTop="16dp"
+-        android:paddingBottom="16dp"
++        android:paddingTop="8dp"
++        android:paddingBottom="8dp"
+         android:paddingStart="@dimen/homepage_preference_text_padding_start"
+         android:paddingEnd="16dp">
+ 
+diff --git a/res/layout/homepage_preference_expressive.xml b/res/layout/homepage_preference_expressive.xml
+index d0798bf6e3d..285b3ed14d0 100644
+--- a/res/layout/homepage_preference_expressive.xml
++++ b/res/layout/homepage_preference_expressive.xml
+@@ -21,7 +21,7 @@
+     android:layout_height="wrap_content"
+     android:paddingStart="?android:attr/listPreferredItemPaddingStart"
+     android:paddingEnd="?android:attr/listPreferredItemPaddingEnd"
+-    android:minHeight="72dp"
++    android:minHeight="60dp"
+     android:gravity="center_vertical"
+     android:background="?android:attr/selectableItemBackground"
+     android:clipToPadding="false"
+@@ -50,8 +50,8 @@
+         android:layout_width="0dp"
+         android:layout_height="wrap_content"
+         android:layout_weight="1"
+-        android:paddingTop="16dp"
+-        android:paddingBottom="16dp"
++        android:paddingTop="8dp"
++        android:paddingBottom="8dp"
+         android:paddingStart="@dimen/homepage_preference_text_padding_start_expressive"
+         android:paddingEnd="16dp">
+ 
+diff --git a/res/values/themes.xml b/res/values/themes.xml
+index 7422dbc2572..3ce7c56b05a 100644
+--- a/res/values/themes.xml
++++ b/res/values/themes.xml
+@@ -32,7 +32,7 @@
+         <item name="android:clipToPadding">false</item>
+         <item name="android:clipChildren">false</item>
+         <item name="preferenceTheme">@style/SettingsPreferenceTheme</item>
+-        <item name="android:listPreferredItemHeight">72dip</item>
++        <item name="android:listPreferredItemHeight">60dip</item>
+         <item name="android:homeAsUpIndicator">@drawable/ic_arrow_back</item>
+         <item name="android:navigationBarColor">@android:color/transparent</item>
+         <item name="android:datePickerDialogTheme">@style/PickerDialogTheme.Settings</item>

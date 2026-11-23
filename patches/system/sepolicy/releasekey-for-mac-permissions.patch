@@ -1,0 +1,15 @@
+diff --git a/private/keys.conf b/private/keys.conf
+index c68ff6fd3..6d41962dc 100644
+--- a/private/keys.conf
++++ b/private/keys.conf
+@@ -31,7 +31,7 @@ ALL : $DEFAULT_SYSTEM_DEV_CERTIFICATE/shared.x509.pem
+ 
+ # Example of ALL TARGET_BUILD_VARIANTS
+ [@RELEASE]
+-ENG       : $DEFAULT_SYSTEM_DEV_CERTIFICATE/testkey.x509.pem
+-USER      : $DEFAULT_SYSTEM_DEV_CERTIFICATE/testkey.x509.pem
+-USERDEBUG : $DEFAULT_SYSTEM_DEV_CERTIFICATE/testkey.x509.pem
++ENG       : $DEFAULT_SYSTEM_DEV_CERTIFICATE/releasekey.x509.pem
++USER      : $DEFAULT_SYSTEM_DEV_CERTIFICATE/releasekey.x509.pem
++USERDEBUG : $DEFAULT_SYSTEM_DEV_CERTIFICATE/releasekey.x509.pem
+ 

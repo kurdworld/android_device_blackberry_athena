@@ -47,6 +47,12 @@
                 android:value="primary_profile_only" />
         </activity>
 
+        <!-- Opened from BlackBerry settings > Troubleshooting > Collect logs -->
+        <activity
+            android:name=".CollectLogsActivity"
+            android:label="@string/collect_logs_title"
+            android:exported="false" />
+
         <activity
             android:name=".LegacyBlackBerryAppsActivity"
             android:label="@string/legacy_blackberry_apps_title"

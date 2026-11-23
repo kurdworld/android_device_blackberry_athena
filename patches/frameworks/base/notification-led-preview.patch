@@ -1,0 +1,31 @@
+diff --git a/services/core/java/com/android/server/notification/NotificationAttentionHelper.java b/services/core/java/com/android/server/notification/NotificationAttentionHelper.java
+index f5756a2d8706..392ed9388dda 100644
+--- a/services/core/java/com/android/server/notification/NotificationAttentionHelper.java
++++ b/services/core/java/com/android/server/notification/NotificationAttentionHelper.java
+@@ -1166,10 +1166,6 @@ public final class NotificationAttentionHelper {
+             return false;
+         }
+ 
+-        if (mUserPresent) {
+-            return false;
+-        }
+-
+         // device lacks light
+         if (!mHasLight && mPriorityNotificationLight == null) {
+             return false;
+@@ -1177,9 +1173,15 @@ public final class NotificationAttentionHelper {
+         // Forced on
+         // Used by LineageParts light picker
+         // eg to allow selecting battery light color when notification led is turned off.
++        // The picker runs with the screen on, so this must be checked before
++        // the user presence test or the preview never lights up.
+         if (isLedForcedOn(record)) {
+             return true;
+         }
++
++        if (mUserPresent) {
++            return false;
++        }
+         // user turned lights off globally
+         if (!mNotificationPulseEnabled) {
+             return false;

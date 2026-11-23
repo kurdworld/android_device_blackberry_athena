@@ -1,0 +1,167 @@
+diff --git a/services/core/java/com/android/server/policy/PhoneWindowManager.java b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+--- a/services/core/java/com/android/server/policy/PhoneWindowManager.java
++++ b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+@@ -1781,7 +1781,8 @@
+                     KeyEvent.FLAG_FROM_SYSTEM, InputDevice.SOURCE_KEYBOARD);
+ 
+             performLongPressHapticFeedback(mBackLongPressAction, "Back - Long Press");
+-            performKeyAction(mBackLongPressAction, event);
++            performKeyAction(mBackLongPressAction, event,
++                    LineageSettings.System.KEY_BACK_LONG_PRESS_CUSTOM_APP);
+         }
+     }
+ 
+@@ -1795,7 +1796,8 @@
+                     KeyEvent.KEYCODE_APP_SWITCH, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
+                     KeyEvent.FLAG_FROM_SYSTEM, InputDevice.SOURCE_KEYBOARD);
+ 
+-            performKeyAction(mAppSwitchPressAction, event);
++            performKeyAction(mAppSwitchPressAction, event,
++                    LineageSettings.System.KEY_APP_SWITCH_ACTION_CUSTOM_APP);
+         }
+     }
+ 
+@@ -1811,7 +1813,8 @@
+                     KeyEvent.FLAG_FROM_SYSTEM, InputDevice.SOURCE_KEYBOARD);
+ 
+             performLongPressHapticFeedback(mAppSwitchLongPressAction, "Recents - Long Press");
+-            performKeyAction(mAppSwitchLongPressAction, event);
++            performKeyAction(mAppSwitchLongPressAction, event,
++                    LineageSettings.System.KEY_APP_SWITCH_LONG_PRESS_CUSTOM_APP);
+         }
+     }
+ 
+@@ -1826,7 +1829,8 @@
+                     KeyEvent.FLAG_FROM_SYSTEM, InputDevice.SOURCE_KEYBOARD);
+ 
+             performKeyAction(mAssistPressAction, event,
+-                    AssistUtils.INVOCATION_TYPE_ASSIST_BUTTON);
++                    AssistUtils.INVOCATION_TYPE_ASSIST_BUTTON,
++                    LineageSettings.System.KEY_ASSIST_ACTION_CUSTOM_APP);
+         }
+     }
+ 
+@@ -1843,7 +1847,8 @@
+ 
+             performLongPressHapticFeedback(mAssistLongPressAction, "Assist - Long Press");
+             performKeyAction(mAssistLongPressAction, event,
+-                    AssistUtils.INVOCATION_TYPE_ASSIST_BUTTON);
++                    AssistUtils.INVOCATION_TYPE_ASSIST_BUTTON,
++                    LineageSettings.System.KEY_ASSIST_LONG_PRESS_CUSTOM_APP);
+         }
+     }
+ 
+@@ -2345,12 +2350,17 @@
+         }
+     }
+ 
+-    private void performKeyAction(Action action, KeyEvent event) {
++    private void performKeyAction(Action action, KeyEvent event, String customAppKey) {
+         // By default, pass INVOCATION_TYPE_UNKNOWN to launch assistant.
+-        performKeyAction(action, event, AssistUtils.INVOCATION_TYPE_UNKNOWN);
++        performKeyAction(action, event, AssistUtils.INVOCATION_TYPE_UNKNOWN, customAppKey);
+     }
+ 
+     private void performKeyAction(Action action, KeyEvent event, int assistInvocationType) {
++        performKeyAction(action, event, assistInvocationType, null);
++    }
++
++    private void performKeyAction(Action action, KeyEvent event, int assistInvocationType,
++            String customAppKey) {
+         switch (action) {
+             case NOTHING:
+                 break;
+@@ -2404,11 +2414,43 @@
+             case CYCLE_RINGER_MODE:
+                 cycleRingerMode();
+                 break;
++            case LAUNCH_APP:
++                launchCustomAppAction(customAppKey);
++                break;
+             default:
+                 break;
+         }
+     }
+ 
++    /**
++     * Launches the component the user picked for a hardware key trigger set to "Custom app".
++     */
++    private void launchCustomAppAction(String customAppKey) {
++        if (customAppKey == null) {
++            return;
++        }
++        final String flat = LineageSettings.System.getStringForUser(
++                mContext.getContentResolver(), customAppKey, mCurrentUserId);
++        if (flat == null || flat.isEmpty()) {
++            return;
++        }
++        final ComponentName component = ComponentName.unflattenFromString(flat);
++        if (component == null) {
++            Log.w(TAG, "Invalid custom app component: " + flat);
++            return;
++        }
++        final Intent intent = new Intent(Intent.ACTION_MAIN)
++                .addCategory(Intent.CATEGORY_LAUNCHER)
++                .setComponent(component)
++                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
++                        | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
++        try {
++            mContext.startActivityAsUser(intent, UserHandle.of(mCurrentUserId));
++        } catch (Exception e) {
++            Log.w(TAG, "Unable to launch custom app " + component, e);
++        }
++    }
++
+     private void cycleRingerMode() {
+         final AudioManagerInternal audioManager = getAudioManagerInternal();
+         final int ringerMode;
+@@ -2542,7 +2584,8 @@
+                 if (mPendingHomeKeyEvent != null) {
+                     mPendingHomeKeyEvent = null;
+                     mHandler.removeCallbacks(mHomeDoubleTapTimeoutRunnable);
+-                    performKeyAction(mHomeDoubleTapAction, event);
++                    performKeyAction(mHomeDoubleTapAction, event,
++                            LineageSettings.System.KEY_HOME_DOUBLE_TAP_CUSTOM_APP);
+                     mHomeConsumed = true;
+                 } else if (mDisplayId == DEFAULT_DISPLAY
+                         && (mHomeLongPressAction == Action.APP_SWITCH
+@@ -2559,7 +2602,8 @@
+                     // If long press home will launch assistant,
+                     // it should pass this right invocation type.
+                     performKeyAction(mHomeLongPressAction, event,
+-                            AssistUtils.INVOCATION_TYPE_HOME_BUTTON_LONG_PRESS);
++                            AssistUtils.INVOCATION_TYPE_HOME_BUTTON_LONG_PRESS,
++                            LineageSettings.System.KEY_HOME_LONG_PRESS_CUSTOM_APP);
+                     mHomeConsumed = true;
+                 }
+             }
+@@ -4105,7 +4149,8 @@
+                             }
+                             performLongPressHapticFeedback(mMenuLongPressAction,
+                                     "Menu - Long Press");
+-                            performKeyAction(mMenuLongPressAction, event);
++                            performKeyAction(mMenuLongPressAction, event,
++                                    LineageSettings.System.KEY_MENU_LONG_PRESS_CUSTOM_APP);
+                             mMenuPressed = false;
+                             return true;
+                         }
+@@ -4118,7 +4163,8 @@
+                     }
+                     mMenuPressed = false;
+                     if (!canceled) {
+-                        performKeyAction(mMenuPressAction, event);
++                        performKeyAction(mMenuPressAction, event,
++                                LineageSettings.System.KEY_MENU_ACTION_CUSTOM_APP);
+                     }
+                 }
+ 
+@@ -5324,7 +5370,8 @@
+ 
+                 if (mLongSwipeDown && isLongSwipe && !down) {
+                     // Trigger long swipe action
+-                    performKeyAction(mEdgeLongSwipeAction, event);
++                    performKeyAction(mEdgeLongSwipeAction, event,
++                            LineageSettings.System.KEY_EDGE_LONG_SWIPE_CUSTOM_APP);
+                     // Reset long swipe state
+                     mLongSwipeDown = false;
+                     // Don't pass back press to app

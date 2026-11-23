@@ -1,0 +1,12 @@
+# BlackBerry settings > Troubleshooting > Collect logs (DeviceSettings CollectLogsActivity).
+# Runs as root in the su domain, so it needs a userdebug or eng build.
+service collect_diagnostics /system_ext/bin/collect-diagnostics-service
+    user root
+    group root log
+    seclabel u:r:su:s0
+    disabled
+    oneshot
+
+on property:sys.diagnostics.collect=1
+    setprop sys.diagnostics.collect 0
+    start collect_diagnostics

@@ -1,0 +1,14 @@
+Allows the android.frameworks.displayservice@1.0 interface to exist again (pairs with the frameworks/hardware/interfaces patch).
+
+diff --git a/build/hidl_interface.go b/build/hidl_interface.go
+index b517e84..c1c2844 100644
+--- a/build/hidl_interface.go
++++ b/build/hidl_interface.go
+@@ -892,6 +892,7 @@ func canInterfaceExist(name string) bool {
+ var allAospHidlInterfaces = map[string]bool{
+ 	"android.frameworks.automotive.display@1.0":    true,
+ 	"android.frameworks.bufferhub@1.0":             true,
++	"android.frameworks.displayservice@1.0":        true, // re-added for the KEY2 camera HAL blob
+ 	"android.frameworks.cameraservice.common@2.0":  true,
+ 	"android.frameworks.cameraservice.device@2.0":  true,
+ 	"android.frameworks.cameraservice.device@2.1":  true,

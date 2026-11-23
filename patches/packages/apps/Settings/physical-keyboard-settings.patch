@@ -1,0 +1,241 @@
+diff --git a/res/values/lineage_physical_keyboard.xml b/res/values/lineage_physical_keyboard.xml
+new file mode 100644
+index 00000000000..d428f7559dc
+--- /dev/null
++++ b/res/values/lineage_physical_keyboard.xml
+@@ -0,0 +1,29 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++     SPDX-FileCopyrightText: The LineageOS Project
++     SPDX-License-Identifier: Apache-2.0
++-->
++<resources>
++    <string name="physical_keyboard_category">Physical keyboard</string>
++    <string name="physical_keyboard_layout_title">Physical keyboard layout</string>
++    <string name="physical_keyboard_layout_summary">Override the layout detected from the keyboard hardware</string>
++
++    <string name="physical_keyboard_layout_automatic">Automatic</string>
++    <string name="physical_keyboard_layout_qwerty">QWERTY</string>
++    <string name="physical_keyboard_layout_azerty">AZERTY</string>
++    <string name="physical_keyboard_layout_qwertz">QWERTZ</string>
++
++    <string-array name="physical_keyboard_layout_entries">
++        <item>@string/physical_keyboard_layout_automatic</item>
++        <item>@string/physical_keyboard_layout_qwerty</item>
++        <item>@string/physical_keyboard_layout_azerty</item>
++        <item>@string/physical_keyboard_layout_qwertz</item>
++    </string-array>
++
++    <string-array name="physical_keyboard_layout_values" translatable="false">
++        <item>0</item>
++        <item>1</item>
++        <item>2</item>
++        <item>3</item>
++    </string-array>
++</resources>
+diff --git a/res/xml/keyboard_settings.xml b/res/xml/keyboard_settings.xml
+index 106002680e9..1480641e0bc 100644
+--- a/res/xml/keyboard_settings.xml
++++ b/res/xml/keyboard_settings.xml
+@@ -39,6 +39,20 @@
+             settings:controller="com.android.settings.inputmethod.ImeSwitcherButtonInNavBarPreferenceController"/>
+     </PreferenceCategory>
+ 
++    <PreferenceCategory
++        android:key="physical_keyboard_category"
++        android:title="@string/physical_keyboard_category">
++
++        <ListPreference
++            android:key="physical_keyboard_layout"
++            android:title="@string/physical_keyboard_layout_title"
++            android:summary="@string/physical_keyboard_layout_summary"
++            android:entries="@array/physical_keyboard_layout_entries"
++            android:entryValues="@array/physical_keyboard_layout_values"
++            android:persistent="false" />
++
++    </PreferenceCategory>
++
+     <PreferenceCategory
+         android:key="input_assistance_category"
+         android:title="@string/input_assistance">
+diff --git a/src/com/android/settings/inputmethod/KeyboardSettings.java b/src/com/android/settings/inputmethod/KeyboardSettings.java
+index fe5057baca9..5fc8dfd0a27 100644
+--- a/src/com/android/settings/inputmethod/KeyboardSettings.java
++++ b/src/com/android/settings/inputmethod/KeyboardSettings.java
+@@ -22,10 +22,15 @@ import static android.app.admin.DevicePolicyResources.Strings.Settings.WORK_PROF
+ 
+ import android.app.settings.SettingsEnums;
+ import android.content.Context;
++import android.hardware.input.InputManager;
+ import android.os.Bundle;
++import android.provider.Settings.Secure;
++import android.view.InputDevice;
++import android.view.KeyEvent;
+ 
+ import androidx.annotation.NonNull;
+ import androidx.annotation.Nullable;
++import androidx.preference.ListPreference;
+ 
+ import com.android.settings.R;
+ import com.android.settings.Utils;
+@@ -51,6 +56,31 @@ public class KeyboardSettings extends DashboardFragment {
+     private static final String KEY_KEYBOARDS_CATEGORY = "keyboards_category";
+     private static final String KEY_POINTER_CATEGORY = "pointer_category";
+     private static final String KEY_TOUCH_HOVERING = "feature_touch_hovering";
++    private static final String KEY_PHYSICAL_KEYBOARD_LAYOUT = "physical_keyboard_layout";
++    private static final String SETTING_PHYSICAL_KEYBOARD_LAYOUT =
++            "lineage_physical_keyboard_layout";
++
++    // Keycodes produced at the physical positions of Q, A, W, Z and Y, in that order.
++    private static final int[] LAYOUT_QWERTY = {
++            KeyEvent.KEYCODE_Q, KeyEvent.KEYCODE_A, KeyEvent.KEYCODE_W,
++            KeyEvent.KEYCODE_Z, KeyEvent.KEYCODE_Y
++    };
++    private static final int[] LAYOUT_AZERTY = {
++            KeyEvent.KEYCODE_A, KeyEvent.KEYCODE_Q, KeyEvent.KEYCODE_Z,
++            KeyEvent.KEYCODE_W, KeyEvent.KEYCODE_Y
++    };
++    private static final int[] LAYOUT_QWERTZ = {
++            KeyEvent.KEYCODE_Q, KeyEvent.KEYCODE_A, KeyEvent.KEYCODE_W,
++            KeyEvent.KEYCODE_Y, KeyEvent.KEYCODE_Z
++    };
++    // Every keycode a layout can produce at those positions; cleared before applying a layout.
++    private static final int[] LAYOUT_REMAPPED_KEYS = {
++            KeyEvent.KEYCODE_Q, KeyEvent.KEYCODE_A, KeyEvent.KEYCODE_W,
++            KeyEvent.KEYCODE_Z, KeyEvent.KEYCODE_Y
++    };
++
++    @Nullable
++    private ListPreference mPhysicalKeyboardLayout;
+ 
+     @Override
+     public int getMetricsCategory() {
+@@ -62,6 +92,42 @@ public class KeyboardSettings extends DashboardFragment {
+         return TAG;
+     }
+ 
++    @Override
++    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
++        super.onCreatePreferences(savedInstanceState, rootKey);
++
++        mPhysicalKeyboardLayout = findPreference(KEY_PHYSICAL_KEYBOARD_LAYOUT);
++        if (mPhysicalKeyboardLayout != null) {
++            final int layout = getStoredKeyboardLayout();
++            mPhysicalKeyboardLayout.setValue(Integer.toString(layout));
++            mPhysicalKeyboardLayout.setSummary(mPhysicalKeyboardLayout.getEntry());
++            mPhysicalKeyboardLayout.setOnPreferenceChangeListener((preference, newValue) -> {
++                final int value = Integer.parseInt((String) newValue);
++                Secure.putInt(requireContext().getContentResolver(),
++                        SETTING_PHYSICAL_KEYBOARD_LAYOUT, value);
++                applyKeyboardLayout(value);
++                final ListPreference list = (ListPreference) preference;
++                final int index = list.findIndexOfValue((String) newValue);
++                if (index >= 0) {
++                    list.setSummary(list.getEntries()[index]);
++                }
++                return true;
++            });
++        }
++    }
++
++    @Override
++    public void onResume() {
++        super.onResume();
++        // Re-apply a layout the user picked, in case the input stack dropped the remappings.
++        if (mPhysicalKeyboardLayout != null) {
++            final int layout = getStoredKeyboardLayout();
++            if (layout != 0) {
++                applyKeyboardLayout(layout);
++            }
++        }
++    }
++
+     @Override
+     public void onCreate(Bundle icicle) {
+         super.onCreate(icicle);
+@@ -85,6 +151,85 @@ public class KeyboardSettings extends DashboardFragment {
+         }
+     }
+ 
++    private int getStoredKeyboardLayout() {
++        final int layout = Secure.getInt(requireContext().getContentResolver(),
++                SETTING_PHYSICAL_KEYBOARD_LAYOUT, 0);
++        return (layout < 0 || layout > 3) ? 0 : layout;
++    }
++
++    /**
++     * Applies the user-selected layout on top of the layout detected from the keyboard hardware.
++     * The layout is expressed as key remappings, so it takes effect immediately and is stored by
++     * the input stack for the next boot.
++     */
++    private void applyKeyboardLayout(int layout) {
++        final InputManager im = requireContext().getSystemService(InputManager.class);
++        if (im == null) {
++            return;
++        }
++        // Clear the letter remappings this setting owns.
++        for (int key : LAYOUT_REMAPPED_KEYS) {
++            im.remapModifierKey(key, key);
++        }
++        if (layout == 0) {
++            return;
++        }
++        final int[] base = getBaseLayout(getDetectedKeyboardLayout());
++        final int[] target;
++        switch (layout) {
++            case 1:
++                target = LAYOUT_QWERTY;
++                break;
++            case 2:
++                target = LAYOUT_AZERTY;
++                break;
++            case 3:
++                target = LAYOUT_QWERTZ;
++                break;
++            default:
++                return;
++        }
++        for (int i = 0; i < base.length; i++) {
++            if (base[i] != target[i]) {
++                im.remapModifierKey(base[i], target[i]);
++            }
++        }
++    }
++
++    private static int[] getBaseLayout(String layout) {
++        if ("azerty".equals(layout)) {
++            return LAYOUT_AZERTY;
++        }
++        if ("qwertz".equals(layout)) {
++            return LAYOUT_QWERTZ;
++        }
++        return LAYOUT_QWERTY;
++    }
++
++    private String getDetectedKeyboardLayout() {
++        final InputManager im = requireContext().getSystemService(InputManager.class);
++        if (im != null) {
++            for (int id : im.getInputDeviceIds()) {
++                final InputDevice device = im.getInputDevice(id);
++                if (device == null) {
++                    continue;
++                }
++                final String name = device.getName();
++                if (name == null || !name.startsWith("stmpe")) {
++                    continue;
++                }
++                if (name.contains("azerty")) {
++                    return "azerty";
++                }
++                if (name.contains("qwertz")) {
++                    return "qwertz";
++                }
++                return "qwerty";
++            }
++        }
++        return "qwerty";
++    }
++
+     @Override
+     protected int getPreferenceScreenResId() {
+         return R.xml.keyboard_settings;

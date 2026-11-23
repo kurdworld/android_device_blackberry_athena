@@ -24,6 +24,7 @@ public class DeviceSettingsActivity extends CollapsingToolbarBaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         if (savedInstanceState == null) {
             getSupportFragmentManager()
                     .beginTransaction()
@@ -126,7 +127,7 @@ public class DeviceSettingsActivity extends CollapsingToolbarBaseActivity {
             if (kbdAdptBright != null) {
                 int current = Settings.Secure.getInt(
                         getContext().getContentResolver(),
-                        "keyboard_adaptive_brightness", 1);
+                        "keyboard_adaptive_brightness", 0);
                 kbdAdptBright.setChecked(current == 1);
                 kbdAdptBright.setOnPreferenceChangeListener(this);
             }
@@ -137,7 +138,7 @@ public class DeviceSettingsActivity extends CollapsingToolbarBaseActivity {
             if (kbdHighBrightnessOff != null) {
                 int legacyAdaptive = Settings.Secure.getInt(
                         getContext().getContentResolver(),
-                        KEY_ADPT_KEYBOARD_BRIGHTNESS, 1);
+                        KEY_ADPT_KEYBOARD_BRIGHTNESS, 0);
                 int current = Settings.Secure.getInt(
                         getContext().getContentResolver(),
                         KEY_KEYBOARD_HIGH_BRIGHTNESS_OFF, legacyAdaptive);
@@ -193,7 +194,7 @@ public class DeviceSettingsActivity extends CollapsingToolbarBaseActivity {
             if (btnAdptBright != null) {
                 int current = Settings.Secure.getInt(
                         getContext().getContentResolver(),
-                        "button_adaptive_brightness", 1);
+                        "button_adaptive_brightness", 0);
                 btnAdptBright.setChecked(current == 1);
                 btnAdptBright.setOnPreferenceChangeListener(this);
             }

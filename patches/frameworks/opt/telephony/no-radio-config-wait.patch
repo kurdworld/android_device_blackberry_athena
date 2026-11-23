@@ -1,0 +1,22 @@
+Settings no longer freezes: without a radio config HAL (radio 1.x devices), telephony stops waiting 2 s for capabilities on every call.
+
+diff --git a/src/java/com/android/internal/telephony/RadioInterfaceCapabilityController.java b/src/java/com/android/internal/telephony/RadioInterfaceCapabilityController.java
+index e8ef142..ffa22bf 100644
+--- a/src/java/com/android/internal/telephony/RadioInterfaceCapabilityController.java
++++ b/src/java/com/android/internal/telephony/RadioInterfaceCapabilityController.java
+@@ -129,6 +129,15 @@ public class RadioInterfaceCapabilityController extends Handler {
+                     }
+                     if (ar.result == null) {
+                         loge("setupRadioInterfaceCapabilities: ar.result is null");
++                        // Without a radio config HAL (devices with only IRadio 1.x) there are
++                        // no capabilities to wait for: cache an empty set so callers don't each
++                        // block for the full timeout.
++                        if (mRadioConfig.getRadioConfigProxy(null).isEmpty()) {
++                            mRadioInterfaceCapabilities =
++                                    Collections.unmodifiableSet(new ArraySet<>());
++                            unregister();
++                        }
++                        mLockRadioInterfaceCapabilities.notify();
+                         return;
+                     }
+                     log("setupRadioInterfaceCapabilities: "

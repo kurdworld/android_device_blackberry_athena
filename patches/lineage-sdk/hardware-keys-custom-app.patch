@@ -1,0 +1,401 @@
+diff --git a/sdk/src/java/lineageos/providers/LineageSettings.java b/sdk/src/java/lineageos/providers/LineageSettings.java
+index 215cc7a2..ecab82db 100644
+--- a/sdk/src/java/lineageos/providers/LineageSettings.java
++++ b/sdk/src/java/lineageos/providers/LineageSettings.java
+@@ -374,7 +374,10 @@ public final class LineageSettings {
+             new InclusiveIntegerRangeValidator(0, 86400);
+ 
+     private static final Validator sHardwareKeyActionvalidator =
+-            new InclusiveIntegerRangeValidator(0, 14);
++            new InclusiveIntegerRangeValidator(0, 15);
++
++    private static final Validator sBlackBerryKeyActionValidator =
++            new InclusiveIntegerRangeValidator(0, 4);
+ 
+     private static final Validator sAlwaysTrueValidator = new Validator() {
+         @Override
+@@ -1244,6 +1247,106 @@ public final class LineageSettings {
+         public static final Validator KEY_EDGE_LONG_SWIPE_ACTION_VALIDATOR =
+                 sHardwareKeyActionvalidator;
+ 
++        /**
++         * Component launched by each hardware key trigger when its action is LAUNCH_APP.
++         * The value is a flattened ComponentName.
++         */
++        public static final String KEY_BACK_LONG_PRESS_CUSTOM_APP =
++                "back_long_press_custom_app";
++        public static final String KEY_HOME_LONG_PRESS_CUSTOM_APP =
++                "home_long_press_custom_app";
++        public static final String KEY_HOME_DOUBLE_TAP_CUSTOM_APP =
++                "home_double_tap_custom_app";
++        public static final String KEY_MENU_ACTION_CUSTOM_APP =
++                "menu_press_custom_app";
++        public static final String KEY_MENU_LONG_PRESS_CUSTOM_APP =
++                "menu_long_press_custom_app";
++        public static final String KEY_ASSIST_ACTION_CUSTOM_APP =
++                "assist_press_custom_app";
++        public static final String KEY_ASSIST_LONG_PRESS_CUSTOM_APP =
++                "assist_long_press_custom_app";
++        public static final String KEY_APP_SWITCH_ACTION_CUSTOM_APP =
++                "app_switch_press_custom_app";
++        public static final String KEY_APP_SWITCH_LONG_PRESS_CUSTOM_APP =
++                "app_switch_long_press_custom_app";
++        public static final String KEY_EDGE_LONG_SWIPE_CUSTOM_APP =
++                "edge_long_swipe_custom_app";
++
++        /**
++         * Actions for the BlackBerry KEY2's Sym, Function and Convenience keys.
++         * 0 = Default, 1 = Ctrl, 2 = Tab, 3 = Super, 4 = Custom app.
++         * Super is only offered for the Function key's long press.
++         */
++        public static final String BLACKBERRY_KEY_SYM_SHORT_PRESS_ACTION =
++                "blackberry_key_sym_short_press_action";
++        public static final String BLACKBERRY_KEY_SYM_LONG_PRESS_ACTION =
++                "blackberry_key_sym_long_press_action";
++        public static final String BLACKBERRY_KEY_SYM_DOUBLE_PRESS_ACTION =
++                "blackberry_key_sym_double_press_action";
++        public static final String BLACKBERRY_KEY_FUNCTION_SHORT_PRESS_ACTION =
++                "blackberry_key_function_short_press_action";
++        public static final String BLACKBERRY_KEY_FUNCTION_LONG_PRESS_ACTION =
++                "blackberry_key_function_long_press_action";
++        public static final String BLACKBERRY_KEY_FUNCTION_DOUBLE_PRESS_ACTION =
++                "blackberry_key_function_double_press_action";
++        public static final String BLACKBERRY_KEY_CONVENIENCE_SHORT_PRESS_ACTION =
++                "blackberry_key_convenience_short_press_action";
++        public static final String BLACKBERRY_KEY_CONVENIENCE_LONG_PRESS_ACTION =
++                "blackberry_key_convenience_long_press_action";
++        public static final String BLACKBERRY_KEY_CONVENIENCE_DOUBLE_PRESS_ACTION =
++                "blackberry_key_convenience_double_press_action";
++
++        /** @hide */
++        public static final Validator BLACKBERRY_KEY_SYM_SHORT_PRESS_ACTION_VALIDATOR =
++                sBlackBerryKeyActionValidator;
++        /** @hide */
++        public static final Validator BLACKBERRY_KEY_SYM_LONG_PRESS_ACTION_VALIDATOR =
++                sBlackBerryKeyActionValidator;
++        /** @hide */
++        public static final Validator BLACKBERRY_KEY_SYM_DOUBLE_PRESS_ACTION_VALIDATOR =
++                sBlackBerryKeyActionValidator;
++        /** @hide */
++        public static final Validator BLACKBERRY_KEY_FUNCTION_SHORT_PRESS_ACTION_VALIDATOR =
++                sBlackBerryKeyActionValidator;
++        /** @hide */
++        public static final Validator BLACKBERRY_KEY_FUNCTION_LONG_PRESS_ACTION_VALIDATOR =
++                sBlackBerryKeyActionValidator;
++        /** @hide */
++        public static final Validator BLACKBERRY_KEY_FUNCTION_DOUBLE_PRESS_ACTION_VALIDATOR =
++                sBlackBerryKeyActionValidator;
++        /** @hide */
++        public static final Validator BLACKBERRY_KEY_CONVENIENCE_SHORT_PRESS_ACTION_VALIDATOR =
++                sBlackBerryKeyActionValidator;
++        /** @hide */
++        public static final Validator BLACKBERRY_KEY_CONVENIENCE_LONG_PRESS_ACTION_VALIDATOR =
++                sBlackBerryKeyActionValidator;
++        /** @hide */
++        public static final Validator BLACKBERRY_KEY_CONVENIENCE_DOUBLE_PRESS_ACTION_VALIDATOR =
++                sBlackBerryKeyActionValidator;
++
++        /**
++         * Component launched by each BlackBerry key gesture when its action is
++         * CUSTOM_APP. The value is a flattened ComponentName.
++         */
++        public static final String BLACKBERRY_KEY_SYM_SHORT_PRESS_CUSTOM_APP =
++                "blackberry_key_sym_short_press_custom_app";
++        public static final String BLACKBERRY_KEY_SYM_LONG_PRESS_CUSTOM_APP =
++                "blackberry_key_sym_long_press_custom_app";
++        public static final String BLACKBERRY_KEY_SYM_DOUBLE_PRESS_CUSTOM_APP =
++                "blackberry_key_sym_double_press_custom_app";
++        public static final String BLACKBERRY_KEY_FUNCTION_SHORT_PRESS_CUSTOM_APP =
++                "blackberry_key_function_short_press_custom_app";
++        public static final String BLACKBERRY_KEY_FUNCTION_LONG_PRESS_CUSTOM_APP =
++                "blackberry_key_function_long_press_custom_app";
++        public static final String BLACKBERRY_KEY_FUNCTION_DOUBLE_PRESS_CUSTOM_APP =
++                "blackberry_key_function_double_press_custom_app";
++        public static final String BLACKBERRY_KEY_CONVENIENCE_SHORT_PRESS_CUSTOM_APP =
++                "blackberry_key_convenience_short_press_custom_app";
++        public static final String BLACKBERRY_KEY_CONVENIENCE_LONG_PRESS_CUSTOM_APP =
++                "blackberry_key_convenience_long_press_custom_app";
++        public static final String BLACKBERRY_KEY_CONVENIENCE_DOUBLE_PRESS_CUSTOM_APP =
++                "blackberry_key_convenience_double_press_custom_app";
++
+         /**
+          * Whether to wake the screen with the home key, the value is boolean.
+          * 0 = 0ff, 1 = on
+@@ -2167,6 +2270,46 @@ public final class LineageSettings {
+             VALIDATORS.put(KEY_APP_SWITCH_LONG_PRESS_ACTION,
+                     KEY_APP_SWITCH_LONG_PRESS_ACTION_VALIDATOR);
+             VALIDATORS.put(KEY_EDGE_LONG_SWIPE_ACTION, KEY_EDGE_LONG_SWIPE_ACTION_VALIDATOR);
++            VALIDATORS.put(KEY_BACK_LONG_PRESS_CUSTOM_APP, sAlwaysTrueValidator);
++            VALIDATORS.put(KEY_HOME_LONG_PRESS_CUSTOM_APP, sAlwaysTrueValidator);
++            VALIDATORS.put(KEY_HOME_DOUBLE_TAP_CUSTOM_APP, sAlwaysTrueValidator);
++            VALIDATORS.put(KEY_MENU_ACTION_CUSTOM_APP, sAlwaysTrueValidator);
++            VALIDATORS.put(KEY_MENU_LONG_PRESS_CUSTOM_APP, sAlwaysTrueValidator);
++            VALIDATORS.put(KEY_ASSIST_ACTION_CUSTOM_APP, sAlwaysTrueValidator);
++            VALIDATORS.put(KEY_ASSIST_LONG_PRESS_CUSTOM_APP, sAlwaysTrueValidator);
++            VALIDATORS.put(KEY_APP_SWITCH_ACTION_CUSTOM_APP, sAlwaysTrueValidator);
++            VALIDATORS.put(KEY_APP_SWITCH_LONG_PRESS_CUSTOM_APP, sAlwaysTrueValidator);
++            VALIDATORS.put(KEY_EDGE_LONG_SWIPE_CUSTOM_APP, sAlwaysTrueValidator);
++            VALIDATORS.put(BLACKBERRY_KEY_SYM_SHORT_PRESS_ACTION,
++                    BLACKBERRY_KEY_SYM_SHORT_PRESS_ACTION_VALIDATOR);
++            VALIDATORS.put(BLACKBERRY_KEY_SYM_LONG_PRESS_ACTION,
++                    BLACKBERRY_KEY_SYM_LONG_PRESS_ACTION_VALIDATOR);
++            VALIDATORS.put(BLACKBERRY_KEY_SYM_DOUBLE_PRESS_ACTION,
++                    BLACKBERRY_KEY_SYM_DOUBLE_PRESS_ACTION_VALIDATOR);
++            VALIDATORS.put(BLACKBERRY_KEY_FUNCTION_SHORT_PRESS_ACTION,
++                    BLACKBERRY_KEY_FUNCTION_SHORT_PRESS_ACTION_VALIDATOR);
++            VALIDATORS.put(BLACKBERRY_KEY_FUNCTION_LONG_PRESS_ACTION,
++                    BLACKBERRY_KEY_FUNCTION_LONG_PRESS_ACTION_VALIDATOR);
++            VALIDATORS.put(BLACKBERRY_KEY_FUNCTION_DOUBLE_PRESS_ACTION,
++                    BLACKBERRY_KEY_FUNCTION_DOUBLE_PRESS_ACTION_VALIDATOR);
++            VALIDATORS.put(BLACKBERRY_KEY_CONVENIENCE_SHORT_PRESS_ACTION,
++                    BLACKBERRY_KEY_CONVENIENCE_SHORT_PRESS_ACTION_VALIDATOR);
++            VALIDATORS.put(BLACKBERRY_KEY_CONVENIENCE_LONG_PRESS_ACTION,
++                    BLACKBERRY_KEY_CONVENIENCE_LONG_PRESS_ACTION_VALIDATOR);
++            VALIDATORS.put(BLACKBERRY_KEY_CONVENIENCE_DOUBLE_PRESS_ACTION,
++                    BLACKBERRY_KEY_CONVENIENCE_DOUBLE_PRESS_ACTION_VALIDATOR);
++            VALIDATORS.put(BLACKBERRY_KEY_SYM_SHORT_PRESS_CUSTOM_APP, sAlwaysTrueValidator);
++            VALIDATORS.put(BLACKBERRY_KEY_SYM_LONG_PRESS_CUSTOM_APP, sAlwaysTrueValidator);
++            VALIDATORS.put(BLACKBERRY_KEY_SYM_DOUBLE_PRESS_CUSTOM_APP, sAlwaysTrueValidator);
++            VALIDATORS.put(BLACKBERRY_KEY_FUNCTION_SHORT_PRESS_CUSTOM_APP, sAlwaysTrueValidator);
++            VALIDATORS.put(BLACKBERRY_KEY_FUNCTION_LONG_PRESS_CUSTOM_APP, sAlwaysTrueValidator);
++            VALIDATORS.put(BLACKBERRY_KEY_FUNCTION_DOUBLE_PRESS_CUSTOM_APP, sAlwaysTrueValidator);
++            VALIDATORS.put(BLACKBERRY_KEY_CONVENIENCE_SHORT_PRESS_CUSTOM_APP,
++                    sAlwaysTrueValidator);
++            VALIDATORS.put(BLACKBERRY_KEY_CONVENIENCE_LONG_PRESS_CUSTOM_APP,
++                    sAlwaysTrueValidator);
++            VALIDATORS.put(BLACKBERRY_KEY_CONVENIENCE_DOUBLE_PRESS_CUSTOM_APP,
++                    sAlwaysTrueValidator);
+             VALIDATORS.put(HOME_WAKE_SCREEN, HOME_WAKE_SCREEN_VALIDATOR);
+             VALIDATORS.put(ASSIST_WAKE_SCREEN, ASSIST_WAKE_SCREEN_VALIDATOR);
+             VALIDATORS.put(APP_SWITCH_WAKE_SCREEN, APP_SWITCH_WAKE_SCREEN_VALIDATOR);
+diff --git a/sdk/src/java/org/lineageos/internal/util/BlackBerryKeys.java b/sdk/src/java/org/lineageos/internal/util/BlackBerryKeys.java
+new file mode 100644
+index 00000000..ad468332
+--- /dev/null
++++ b/sdk/src/java/org/lineageos/internal/util/BlackBerryKeys.java
+@@ -0,0 +1,207 @@
++/*
++ * SPDX-FileCopyrightText: The LineageOS Project
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++package org.lineageos.internal.util;
++
++import android.content.ContentResolver;
++import android.provider.Settings;
++
++import lineageos.providers.LineageSettings;
++
++/**
++ * Settings and action values for the BlackBerry KEY2's Sym, Function and
++ * Convenience keys. Each key has a short press, long press and double press
++ * action, and every action can launch its own app.
++ */
++public final class BlackBerryKeys {
++    public enum Key {
++        SYM,
++        FUNCTION,
++        CONVENIENCE
++    }
++
++    public enum Gesture {
++        SHORT_PRESS,
++        LONG_PRESS,
++        DOUBLE_PRESS
++    }
++
++    public enum Action {
++        DEFAULT,
++        CTRL,
++        TAB,
++        SUPER,
++        CUSTOM_APP;
++
++        public static Action fromIntSafe(int id) {
++            if (id < DEFAULT.ordinal() || id >= Action.values().length) {
++                return DEFAULT;
++            }
++            return Action.values()[id];
++        }
++    }
++
++    private static final String LEGACY_SYM_ACTION = "blackberry_key_sym_action";
++    private static final String LEGACY_FUNCTION_ACTION = "blackberry_key_function_action";
++    private static final String LEGACY_CONVENIENCE_ACTION =
++            "blackberry_key_convenience_action";
++    private static final String LEGACY_SYM_CUSTOM_APP =
++            "blackberry_key_sym_custom_app";
++    private static final String LEGACY_FUNCTION_CUSTOM_APP =
++            "blackberry_key_function_custom_app";
++    private static final String LEGACY_CONVENIENCE_CUSTOM_APP =
++            "blackberry_key_convenience_custom_app";
++
++    private BlackBerryKeys() {
++    }
++
++    public static String actionSetting(Key key, Gesture gesture) {
++        switch (key) {
++            case SYM:
++                switch (gesture) {
++                    case SHORT_PRESS:
++                        return LineageSettings.System.BLACKBERRY_KEY_SYM_SHORT_PRESS_ACTION;
++                    case LONG_PRESS:
++                        return LineageSettings.System.BLACKBERRY_KEY_SYM_LONG_PRESS_ACTION;
++                    case DOUBLE_PRESS:
++                        return LineageSettings.System.BLACKBERRY_KEY_SYM_DOUBLE_PRESS_ACTION;
++                }
++                break;
++            case FUNCTION:
++                switch (gesture) {
++                    case SHORT_PRESS:
++                        return LineageSettings.System.BLACKBERRY_KEY_FUNCTION_SHORT_PRESS_ACTION;
++                    case LONG_PRESS:
++                        return LineageSettings.System.BLACKBERRY_KEY_FUNCTION_LONG_PRESS_ACTION;
++                    case DOUBLE_PRESS:
++                        return LineageSettings.System.BLACKBERRY_KEY_FUNCTION_DOUBLE_PRESS_ACTION;
++                }
++                break;
++            case CONVENIENCE:
++                switch (gesture) {
++                    case SHORT_PRESS:
++                        return LineageSettings.System
++                                .BLACKBERRY_KEY_CONVENIENCE_SHORT_PRESS_ACTION;
++                    case LONG_PRESS:
++                        return LineageSettings.System
++                                .BLACKBERRY_KEY_CONVENIENCE_LONG_PRESS_ACTION;
++                    case DOUBLE_PRESS:
++                        return LineageSettings.System
++                                .BLACKBERRY_KEY_CONVENIENCE_DOUBLE_PRESS_ACTION;
++                }
++                break;
++        }
++        throw new IllegalArgumentException("Unknown key/gesture: " + key + "/" + gesture);
++    }
++
++    public static String customAppSetting(Key key, Gesture gesture) {
++        switch (key) {
++            case SYM:
++                switch (gesture) {
++                    case SHORT_PRESS:
++                        return LineageSettings.System.BLACKBERRY_KEY_SYM_SHORT_PRESS_CUSTOM_APP;
++                    case LONG_PRESS:
++                        return LineageSettings.System.BLACKBERRY_KEY_SYM_LONG_PRESS_CUSTOM_APP;
++                    case DOUBLE_PRESS:
++                        return LineageSettings.System.BLACKBERRY_KEY_SYM_DOUBLE_PRESS_CUSTOM_APP;
++                }
++                break;
++            case FUNCTION:
++                switch (gesture) {
++                    case SHORT_PRESS:
++                        return LineageSettings.System
++                                .BLACKBERRY_KEY_FUNCTION_SHORT_PRESS_CUSTOM_APP;
++                    case LONG_PRESS:
++                        return LineageSettings.System
++                                .BLACKBERRY_KEY_FUNCTION_LONG_PRESS_CUSTOM_APP;
++                    case DOUBLE_PRESS:
++                        return LineageSettings.System
++                                .BLACKBERRY_KEY_FUNCTION_DOUBLE_PRESS_CUSTOM_APP;
++                }
++                break;
++            case CONVENIENCE:
++                switch (gesture) {
++                    case SHORT_PRESS:
++                        return LineageSettings.System
++                                .BLACKBERRY_KEY_CONVENIENCE_SHORT_PRESS_CUSTOM_APP;
++                    case LONG_PRESS:
++                        return LineageSettings.System
++                                .BLACKBERRY_KEY_CONVENIENCE_LONG_PRESS_CUSTOM_APP;
++                    case DOUBLE_PRESS:
++                        return LineageSettings.System
++                                .BLACKBERRY_KEY_CONVENIENCE_DOUBLE_PRESS_CUSTOM_APP;
++                }
++                break;
++        }
++        throw new IllegalArgumentException("Unknown key/gesture: " + key + "/" + gesture);
++    }
++
++    public static String legacyActionSetting(Key key) {
++        switch (key) {
++            case SYM:
++                return LEGACY_SYM_ACTION;
++            case FUNCTION:
++                return LEGACY_FUNCTION_ACTION;
++            case CONVENIENCE:
++                return LEGACY_CONVENIENCE_ACTION;
++            default:
++                throw new IllegalArgumentException("Unknown key: " + key);
++        }
++    }
++
++    public static String legacyCustomAppSetting(Key key) {
++        switch (key) {
++            case SYM:
++                return LEGACY_SYM_CUSTOM_APP;
++            case FUNCTION:
++                return LEGACY_FUNCTION_CUSTOM_APP;
++            case CONVENIENCE:
++                return LEGACY_CONVENIENCE_CUSTOM_APP;
++            default:
++                throw new IllegalArgumentException("Unknown key: " + key);
++        }
++    }
++
++    /**
++     * Returns the action stored for a gesture, falling back to the old
++     * Settings > Keyboard value for the short press. The old Home value (3)
++     * is mapped to Default because 3 now means Super.
++     */
++    public static int getAction(ContentResolver cr, Key key, Gesture gesture, int user) {
++        final int action = LineageSettings.System.getIntForUser(cr,
++                actionSetting(key, gesture), -1, user);
++        if (action >= 0) {
++            return Action.fromIntSafe(action).ordinal();
++        }
++        if (gesture == Gesture.SHORT_PRESS) {
++            int legacy = Settings.Secure.getIntForUser(cr,
++                    legacyActionSetting(key), Action.DEFAULT.ordinal(), user);
++            if (legacy < Action.DEFAULT.ordinal()
++                    || legacy >= Action.values().length
++                    || legacy == Action.SUPER.ordinal()) {
++                legacy = Action.DEFAULT.ordinal();
++            }
++            return legacy;
++        }
++        return Action.DEFAULT.ordinal();
++    }
++
++    /**
++     * Returns the component stored for a gesture, falling back to the old
++     * Settings > Keyboard value for the short press.
++     */
++    public static String getCustomApp(ContentResolver cr, Key key, Gesture gesture, int user) {
++        final String app = LineageSettings.System.getStringForUser(cr,
++                customAppSetting(key, gesture), user);
++        if (app != null) {
++            return app;
++        }
++        if (gesture == Gesture.SHORT_PRESS) {
++            return Settings.Secure.getStringForUser(cr,
++                    legacyCustomAppSetting(key), user);
++        }
++        return null;
++    }
++}
+diff --git a/sdk/src/java/org/lineageos/internal/util/DeviceKeysConstants.java b/sdk/src/java/org/lineageos/internal/util/DeviceKeysConstants.java
+index 6ccd834f..138c4fca 100644
+--- a/sdk/src/java/org/lineageos/internal/util/DeviceKeysConstants.java
++++ b/sdk/src/java/org/lineageos/internal/util/DeviceKeysConstants.java
+@@ -29,10 +29,11 @@ public class DeviceKeysConstants {
+         PLAY_PAUSE_MUSIC,
+         SCREENSHOT,
+         PARTIAL_SCREENSHOT,
+-        CYCLE_RINGER_MODE;
++        CYCLE_RINGER_MODE,
++        LAUNCH_APP;
+ 
+         public static Action fromIntSafe(int id) {
+-            if (id < NOTHING.ordinal() || id > Action.values().length) {
++            if (id < NOTHING.ordinal() || id >= Action.values().length) {
+                 return NOTHING;
+             }
+             return Action.values()[id];

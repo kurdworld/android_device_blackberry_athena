@@ -1,0 +1,57 @@
+diff --git a/packages/SettingsLib/Category/res/layout-v36/settingslib_expressive_untitled_preference_category.xml b/packages/SettingsLib/Category/res/layout-v36/settingslib_expressive_untitled_preference_category.xml
+index f0fad7c3e0ae..e09d18247768 100644
+--- a/packages/SettingsLib/Category/res/layout-v36/settingslib_expressive_untitled_preference_category.xml
++++ b/packages/SettingsLib/Category/res/layout-v36/settingslib_expressive_untitled_preference_category.xml
+@@ -18,7 +18,7 @@
+     xmlns:android="http://schemas.android.com/apk/res/android"
+     android:layout_width="match_parent"
+     android:layout_height="wrap_content"
+-    android:layout_marginTop="@dimen/settingslib_expressive_space_extrasmall6"
++    android:layout_marginTop="@dimen/settingslib_expressive_space_extrasmall4"
+     android:baselineAligned="false"
+     android:filterTouchesWhenObscured="false">
+ </LinearLayout>
+diff --git a/packages/SettingsLib/SettingsTheme/res/layout-v36/settingslib_expressive_preference.xml b/packages/SettingsLib/SettingsTheme/res/layout-v36/settingslib_expressive_preference.xml
+index 7269368367e1..ebea8c3252fb 100644
+--- a/packages/SettingsLib/SettingsTheme/res/layout-v36/settingslib_expressive_preference.xml
++++ b/packages/SettingsLib/SettingsTheme/res/layout-v36/settingslib_expressive_preference.xml
+@@ -28,7 +28,7 @@
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:gravity="center_vertical"
+-        android:minHeight="72dp"
++        android:minHeight="60dp"
+         android:baselineAligned="false"
+         android:orientation="horizontal"
+         android:clipToPadding="false">
+diff --git a/packages/SettingsLib/SettingsTheme/res/values-v36/styles_preference_expressive.xml b/packages/SettingsLib/SettingsTheme/res/values-v36/styles_preference_expressive.xml
+index 5b16f7f79a4f..831d6b6aea73 100644
+--- a/packages/SettingsLib/SettingsTheme/res/values-v36/styles_preference_expressive.xml
++++ b/packages/SettingsLib/SettingsTheme/res/values-v36/styles_preference_expressive.xml
+@@ -80,7 +80,7 @@
+     </style>
+ 
+     <style name="ExpressivePreferenceRootLayoutStyle">
+-        <item name="android:minHeight">72dp</item>
++        <item name="android:minHeight">60dp</item>
+         <item name="android:gravity">center_vertical</item>
+         <item name="android:paddingStart">?android:attr/listPreferredItemPaddingStart</item>
+         <item name="android:paddingEnd">?android:attr/listPreferredItemPaddingEnd</item>
+@@ -118,7 +118,7 @@
+         <item name="android:layout_weight">1</item>
+         <item name="android:minHeight">@dimen/settingslib_expressive_space_medium3</item>
+         <item name="android:gravity">center_vertical</item>
+-        <item name="android:paddingVertical">@dimen/settingslib_expressive_space_small1</item>f
++        <item name="android:paddingVertical">@dimen/settingslib_expressive_space_extrasmall4</item>
+         <item name="android:paddingStart">@dimen/settingslib_expressive_space_none</item>
+         <item name="android:paddingEnd">@dimen/settingslib_expressive_space_small1</item>
+     </style>
+@@ -181,7 +181,7 @@
+         <item name="android:paddingStart">?android:attr/listPreferredItemPaddingStart</item>
+         <item name="android:paddingRight">?android:attr/listPreferredItemPaddingRight</item>
+         <item name="android:paddingEnd">?android:attr/listPreferredItemPaddingEnd</item>
+-        <item name="android:paddingTop">@dimen/settingslib_expressive_space_small1</item>
++        <item name="android:paddingTop">@dimen/settingslib_expressive_space_extrasmall4</item>
+         <item name="android:background">?android:attr/selectableItemBackground</item>
+         <item name="android:baselineAligned">false</item>
+         <item name="android:gravity">center_vertical</item>

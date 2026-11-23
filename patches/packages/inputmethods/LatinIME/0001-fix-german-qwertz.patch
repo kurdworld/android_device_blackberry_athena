@@ -1,0 +1,13 @@
+diff --git a/java/res/values/predefined-subtypes.xml b/java/res/values/predefined-subtypes.xml
+index 3bf0e61..8153361 100644
+--- a/java/res/values/predefined-subtypes.xml
++++ b/java/res/values/predefined-subtypes.xml
+@@ -20,7 +20,7 @@
+ <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+     <!-- Predefined subtypes (language:layout[:extraValue]) -->
+     <string-array name="predefined_subtypes" translatable="false">
+-        <item>de:qwerty:AsciiCapable</item>
++        <item>de:qwertz:AsciiCapable</item>
+         <item>fr:qwertz:AsciiCapable</item>
+     </string-array>
+ </resources>

@@ -1,0 +1,46 @@
+diff --git a/services/core/java/com/android/server/power/PowerManagerService.java b/services/core/java/com/android/server/power/PowerManagerService.java
+index e6b014e099dc..19942b61abfc 100644
+--- a/services/core/java/com/android/server/power/PowerManagerService.java
++++ b/services/core/java/com/android/server/power/PowerManagerService.java
+@@ -385,6 +385,10 @@ public final class PowerManagerService extends SystemService
+     private LogicalLight mKeyboardLight;
+ 
+     private int mButtonTimeout;
++    // Follow the per-window button brightness override for the capacitive
++    // navigation keys. When off, the keys use the fixed button_brightness
++    // setting instead, which keeps them steady while windows come and go.
++    private boolean mButtonAdaptiveBrightness;
+     private float mButtonBrightness;
+     private boolean mKeyboardVisible;
+     private float mKeyboardBrightness;
+@@ -1669,6 +1673,9 @@ public final class PowerManagerService extends SystemService
+         resolver.registerContentObserver(LineageSettings.Secure.getUriFor(
+                 LineageSettings.Secure.BUTTON_BRIGHTNESS),
+                 false, mSettingsObserver, UserHandle.USER_ALL);
++        resolver.registerContentObserver(Settings.Secure.getUriFor(
++                "button_adaptive_brightness"),
++                false, mSettingsObserver, UserHandle.USER_ALL);
+         resolver.registerContentObserver(LineageSettings.Secure.getUriFor(
+                 LineageSettings.Secure.BUTTON_BACKLIGHT_TIMEOUT),
+                 false, mSettingsObserver, UserHandle.USER_ALL);
+@@ -1832,6 +1839,8 @@ public final class PowerManagerService extends SystemService
+         mButtonBrightness = LineageSettings.Secure.getFloatForUser(resolver,
+                 LineageSettings.Secure.BUTTON_BRIGHTNESS, mButtonBrightnessDefault,
+                 UserHandle.USER_CURRENT);
++        mButtonAdaptiveBrightness = Settings.Secure.getIntForUser(resolver,
++                "button_adaptive_brightness", 0, UserHandle.USER_CURRENT) != 0;
+         mButtonLightOnKeypressOnly = LineageSettings.System.getIntForUser(resolver,
+                 LineageSettings.System.BUTTON_BACKLIGHT_ONLY_WHEN_PRESSED,
+                 0, UserHandle.USER_CURRENT) == 1;
+@@ -3433,8 +3442,9 @@ public final class PowerManagerService extends SystemService
+                         if (wakefulness == WAKEFULNESS_AWAKE) {
+                             if (mButtonsLight != null) {
+                                 float buttonBrightness = BRIGHTNESS_OFF_FLOAT;
+-                                if (isValidBrightness(
+-                                        mButtonBrightnessOverrideFromWindowManager)) {
++                                if (mButtonAdaptiveBrightness
++                                        && isValidBrightness(
++                                                mButtonBrightnessOverrideFromWindowManager)) {
+                                     if (mButtonBrightnessOverrideFromWindowManager >
+                                             PowerManager.BRIGHTNESS_MIN) {
+                                         buttonBrightness =

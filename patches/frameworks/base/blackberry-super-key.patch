@@ -1,0 +1,111 @@
+diff --git a/services/accessibility/java/com/android/server/accessibility/AccessibilityManagerService.java b/services/accessibility/java/com/android/server/accessibility/AccessibilityManagerService.java
+index ca079f8b1d8c..f990a4eaddd7 100644
+--- a/services/accessibility/java/com/android/server/accessibility/AccessibilityManagerService.java
++++ b/services/accessibility/java/com/android/server/accessibility/AccessibilityManagerService.java
+@@ -513,8 +513,8 @@ public class AccessibilityManagerService extends IAccessibilityManager.Stub
+         }
+ 
+         @Override
+-        public void performSystemAction(int actionId) {
+-            mService.getSystemActionPerformer().performSystemAction(actionId);
++        public boolean performSystemAction(int actionId) {
++            return mService.getSystemActionPerformer().performSystemAction(actionId);
+         }
+ 
+         @Override
+diff --git a/services/core/java/com/android/server/AccessibilityManagerInternal.java b/services/core/java/com/android/server/AccessibilityManagerInternal.java
+index 45b9edf8e24b..fe3ee8cc9fab 100644
+--- a/services/core/java/com/android/server/AccessibilityManagerInternal.java
++++ b/services/core/java/com/android/server/AccessibilityManagerInternal.java
+@@ -54,8 +54,12 @@ public abstract class AccessibilityManagerInternal {
+             IRemoteAccessibilityInputConnection remoteAccessibilityInputConnection,
+             EditorInfo editorInfo, boolean restarting);
+ 
+-    /** Trigger a system action with the provided {@code actionId}. */
+-    public abstract void performSystemAction(int actionId);
++    /**
++     * Trigger a system action with the provided {@code actionId}.
++     *
++     * @return whether an action was registered for {@code actionId} and was performed
++     */
++    public abstract boolean performSystemAction(int actionId);
+ 
+     /**
+      * Queries whether touch-exploration mode is enabled or not for the specified user.
+@@ -126,7 +130,8 @@ public abstract class AccessibilityManagerInternal {
+         }
+ 
+         @Override
+-        public void performSystemAction(int actionId) {
++        public boolean performSystemAction(int actionId) {
++            return false;
+         }
+ 
+         @Override
+diff --git a/services/core/java/com/android/server/input/KeyGestureController.java b/services/core/java/com/android/server/input/KeyGestureController.java
+index e195f1c2f6c0..6a0db34ed922 100644
+--- a/services/core/java/com/android/server/input/KeyGestureController.java
++++ b/services/core/java/com/android/server/input/KeyGestureController.java
+@@ -26,6 +26,7 @@ import static android.os.UserManager.isVisibleBackgroundUsersEnabled;
+ import static android.view.Display.DEFAULT_DISPLAY;
+ import static android.view.WindowManager.ScreenshotSource.SCREENSHOT_KEY_CHORD;
+ import static android.view.WindowManager.ScreenshotSource.SCREENSHOT_KEY_OTHER;
++import static android.view.WindowManagerPolicyConstants.FLAG_INJECTED;
+ import static android.view.WindowManagerPolicyConstants.FLAG_INTERACTIVE;
+ 
+ import static com.android.hardware.input.Flags.enablePartialScreenshotKeyboardShortcut;
+@@ -685,6 +686,12 @@ final class KeyGestureController {
+             return KEY_INTERCEPT_RESULT_CONSUMED;
+         }
+         if (event.isMetaPressed()) {
++            if (isInjectedRightMeta(event, policyFlags)) {
++                // The BlackBerry KEY2 Super action is synthesized by PhoneWindowManager as an
++                // injected right Meta modifier. Let Meta combinations reach the focused app so
++                // Super can be used as a modifier; system Meta shortcuts were handled above.
++                return KEY_INTERCEPT_RESULT_NOT_CONSUMED;
++            }
+             if (fixSearchModifierFallbacks() ) {
+                 // If the key has not been consumed and includes the meta key, do not send the event
+                 // to the app and attempt to generate a fallback.
+@@ -736,6 +743,16 @@ final class KeyGestureController {
+                 null, null, null) == PERMISSION_GRANTED;
+     }
+ 
++    /**
++     * Whether this is the right Meta combination synthesized for the BlackBerry KEY2 Super
++     * action. Only injected right Meta passes through to apps; Meta from a real keyboard keeps
++     * the default behavior.
++     */
++    private static boolean isInjectedRightMeta(KeyEvent event, int policyFlags) {
++        return (policyFlags & FLAG_INJECTED) != 0
++                && (event.getMetaState() & KeyEvent.META_META_RIGHT_ON) != 0;
++    }
++
+     @SuppressLint("MissingPermission")
+     private boolean interceptShortcutsBeforeKeyCapture(@Nullable IBinder focusedToken,
+             @NonNull KeyEvent event) {
+diff --git a/services/core/java/com/android/server/policy/PhoneWindowManager.java b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+--- a/services/core/java/com/android/server/policy/PhoneWindowManager.java
++++ b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+@@ -2301,11 +2301,20 @@
+             }
+             startActivityAsUser(intent, UserHandle.CURRENT);
+         } else {
++            boolean performed = false;
+             AccessibilityManagerInternal accessibilityManager = getAccessibilityManagerInternal();
+             if (accessibilityManager != null) {
+-                accessibilityManager.performSystemAction(
++                performed = accessibilityManager.performSystemAction(
+                         AccessibilityService.GLOBAL_ACTION_ACCESSIBILITY_ALL_APPS);
+             }
++            if (!performed) {
++                // The launcher registers the accessibility action while it is running. Use its
++                // all apps activity when no action is registered, for example at boot.
++                Intent intent = new Intent(Intent.ACTION_ALL_APPS)
++                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
++                                | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
++                startActivityAsUser(intent, UserHandle.CURRENT);
++            }
+         }
+         dismissKeyboardShortcutsMenu();
+     }

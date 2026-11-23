@@ -1,0 +1,34 @@
+diff --git a/app/src/main/java/org/lineageos/updater/deviceinfo/actions/DeviceInfoActionButtons.kt b/app/src/main/java/org/lineageos/updater/deviceinfo/actions/DeviceInfoActionButtons.kt
+index 90d2618..1d9d397 100644
+--- a/app/src/main/java/org/lineageos/updater/deviceinfo/actions/DeviceInfoActionButtons.kt
++++ b/app/src/main/java/org/lineageos/updater/deviceinfo/actions/DeviceInfoActionButtons.kt
+@@ -28,7 +28,6 @@ import com.android.settingslib.spa.framework.theme.SettingsShape.CornerExtraSmal
+ import com.android.settingslib.spa.framework.theme.SettingsSpace.small1
+ import com.android.settingslib.spa.framework.theme.SettingsTheme
+ import org.lineageos.updater.R
+-import org.lineageos.updater.deviceinfo.DeviceInfoUtils
+ 
+ @Composable
+ fun DeviceInfoActionButtons(modifier: Modifier = Modifier) {
+@@ -52,7 +51,7 @@ fun DeviceInfoActionButtons(modifier: Modifier = Modifier) {
+         )
+         TextButton(
+             onClick = {
+-                val url = context.getString(R.string.menu_changelog_url, DeviceInfoUtils.device)
++                val url = context.getString(R.string.menu_changelog_url)
+                 val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+                 context.startActivity(intent)
+             },
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index df56e15..bb948db 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -91,7 +91,7 @@
+     <string name="menu_stream_updates_summary">Install updates while downloading. Disable to save update packages for export.</string>
+     <string name="menu_delete_update">Delete</string>
+     <string name="menu_export_update">Export update</string>
+-    <string name="menu_changelog_url" translatable="false">https://download.lineageos.org/<xliff:g id="device_name">%1$s</xliff:g>/changes</string>
++    <string name="menu_changelog_url" translatable="false">https://kurdworld.github.io/lineageos_ota/README.html</string>
+     <string name="menu_view_downloads">View on <xliff:g id="brand_name" example="LineageOS">%1$s</xliff:g> Downloads</string>
+     <string name="menu_metered_network_warning">Metered network warning</string>
+     <string name="menu_metered_network_warning_summary">Warn before downloading over mobile data</string>

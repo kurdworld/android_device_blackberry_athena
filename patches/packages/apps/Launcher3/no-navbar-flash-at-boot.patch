@@ -1,0 +1,31 @@
+The virtual navigation bar no longer flashes during boot on devices without one (config_showNavigationBar=false).
+
+diff --git a/quickstep/src/com/android/launcher3/taskbar/TaskbarManagerImpl.java b/quickstep/src/com/android/launcher3/taskbar/TaskbarManagerImpl.java
+index bf84cfc..a1a5edd 100644
+--- a/quickstep/src/com/android/launcher3/taskbar/TaskbarManagerImpl.java
++++ b/quickstep/src/com/android/launcher3/taskbar/TaskbarManagerImpl.java
+@@ -780,7 +780,11 @@ public class TaskbarManagerImpl {
+             resource.destroyTaskbarForDisplay();
+ 
+             boolean displayExists = getDisplay(displayId) != null;
+-            boolean isTaskbarEnabled = dp != null && resource.isTaskbarEnabled();
++            // Devices without an on-screen navigation bar (config_showNavigationBar is false, e.g.
++            // the BlackBerry KEY2) must not create the three-button taskbar while SystemUI has not
++            // yet reported the navigation bar as disabled: it would flash on screen during boot.
++            boolean isTaskbarEnabled = dp != null && resource.isTaskbarEnabled()
++                    && (isLargeScreenTaskbar || deviceHasNavigationBar());
+             resource.debugMsg("recreateTaskbarForDisplay: isTaskbarEnabled=" + isTaskbarEnabled
+                     + " [dp != null]=" + (dp != null)
+                     + " mUserUnlocked=" + mUserUnlocked
+@@ -1239,4 +1243,11 @@ public class TaskbarManagerImpl {
+             });
+         }
+     }
++
++    /** Whether the device is configured to show an on-screen navigation bar. */
++    private static boolean deviceHasNavigationBar() {
++        final android.content.res.Resources res = android.content.res.Resources.getSystem();
++        final int id = res.getIdentifier("config_showNavigationBar", "bool", "android");
++        return id == 0 || res.getBoolean(id);
++    }
+ }

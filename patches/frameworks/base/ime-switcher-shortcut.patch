@@ -1,0 +1,115 @@
+diff --git a/core/java/android/provider/Settings.java b/core/java/android/provider/Settings.java
+index 090c41d92bc7..954ab9957448 100644
+--- a/core/java/android/provider/Settings.java
++++ b/core/java/android/provider/Settings.java
+@@ -8719,6 +8719,14 @@ public final class Settings {
+         @SuppressLint("NoSettingsProvider")
+         public static final String SHOW_IME_WITH_HARD_KEYBOARD = "show_ime_with_hard_keyboard";
+ 
++        /**
++         * Which shortcut opens the IME switcher picker on a hardware keyboard.
++         * 0 = Alt+Enter (default), 1 = Shift+Space, 2 = Ctrl key, 3 = SYM key.
++         * @hide
++         */
++        @Readable
++        public static final String IME_SWITCHER_SHORTCUT = "ime_switcher_shortcut";
++
+         /**
+          * Whether to enable bounce keys for Physical Keyboard accessibility.
+          *
+diff --git a/core/java/android/view/inputmethod/InputMethodManager.java b/core/java/android/view/inputmethod/InputMethodManager.java
+index 6019ed0b1895..b55ff545eaf5 100644
+--- a/core/java/android/view/inputmethod/InputMethodManager.java
++++ b/core/java/android/view/inputmethod/InputMethodManager.java
+@@ -4527,10 +4527,10 @@ public final class InputMethodManager {
+             if (isImeSessionAvailableLocked()) {
+                 if (event instanceof KeyEvent) {
+                     KeyEvent keyEvent = (KeyEvent)event;
+-                    if (keyEvent.getAction() == KeyEvent.ACTION_DOWN
+-                            && keyEvent.getKeyCode() == KeyEvent.KEYCODE_SYM
+-                            && keyEvent.getRepeatCount() == 0) {
+-                        showInputMethodPickerLocked();
++                    if (keyEvent.getRepeatCount() == 0 && isImeSwitcherShortcut(keyEvent)) {
++                        if (keyEvent.getAction() == KeyEvent.ACTION_DOWN) {
++                            showInputMethodPickerLocked();
++                        }
+                         return DISPATCH_HANDLED;
+                     }
+                 }
+@@ -4728,6 +4728,30 @@ public final class InputMethodManager {
+         mPendingEventPool.release(p);
+     }
+ 
++    /**
++     * Whether the key opens the IME picker, per {@link Settings.Secure#IME_SWITCHER_SHORTCUT}:
++     * 0 = Alt+Enter (default), 1 = Shift+Space, 2 = Ctrl key, 3 = SYM key. Keyboard apps use
++     * SYM for their own symbol picker, so it is no longer the default.
++     */
++    private boolean isImeSwitcherShortcut(KeyEvent keyEvent) {
++        final int mode = mCurRootView == null ? 0 : Settings.Secure.getInt(
++                mCurRootView.mContext.getContentResolver(),
++                Settings.Secure.IME_SWITCHER_SHORTCUT, 0);
++        final int keyCode = keyEvent.getKeyCode();
++        switch (mode) {
++            case 1:
++                return keyCode == KeyEvent.KEYCODE_SPACE && keyEvent.isShiftPressed();
++            case 2:
++                return keyCode == KeyEvent.KEYCODE_CTRL_LEFT
++                        || keyCode == KeyEvent.KEYCODE_CTRL_RIGHT
++                        || keyCode == KeyEvent.KEYCODE_FUNCTION;
++            case 3:
++                return keyCode == KeyEvent.KEYCODE_SYM;
++            default:
++                return keyCode == KeyEvent.KEYCODE_ENTER && keyEvent.isAltPressed();
++        }
++    }
++
+     /**
+      * Show IME picker popup window.
+      *
+diff --git a/core/res/res/values/config.xml b/core/res/res/values/config.xml
+index a19202ff1683..bb219b4eec61 100644
+--- a/core/res/res/values/config.xml
++++ b/core/res/res/values/config.xml
+@@ -4962,6 +4962,11 @@
+     <!-- True if the device supports system navigation keys. -->
+     <bool name="config_supportSystemNavigationKeys">false</bool>
+ 
++    <!-- True if a built-in (non-external) hardware keyboard has a complete key character map of its
++         own, such as one with an Alt or Sym symbol layer. Keyboard layout overlays replace whole
++         keys in the map, so they are not applied to such keyboards. -->
++    <bool name="config_builtInKeyboardKeepsOwnCharacterMap">false</bool>
++
+     <!-- emergency call number for the emergency affordance -->
+     <string name="config_emergency_call_number" translatable="false">112</string>
+ 
+diff --git a/core/res/res/values/symbols.xml b/core/res/res/values/symbols.xml
+index f20a2b6a0e74..b9b6e66b408f 100644
+--- a/core/res/res/values/symbols.xml
++++ b/core/res/res/values/symbols.xml
+@@ -3770,6 +3770,7 @@
+ 
+   <!-- For System navigation keys -->
+   <java-symbol type="bool" name="config_supportSystemNavigationKeys" />
++  <java-symbol type="bool" name="config_builtInKeyboardKeepsOwnCharacterMap" />
+ 
+   <java-symbol type="layout" name="unsupported_display_size_dialog_content" />
+   <java-symbol type="string" name="unsupported_display_size_message" />
+diff --git a/services/core/java/com/android/server/input/KeyboardLayoutManager.java b/services/core/java/com/android/server/input/KeyboardLayoutManager.java
+index 109b862cc1f7..90fae40240e7 100644
+--- a/services/core/java/com/android/server/input/KeyboardLayoutManager.java
++++ b/services/core/java/com/android/server/input/KeyboardLayoutManager.java
+@@ -457,6 +457,13 @@ class KeyboardLayoutManager implements InputManager.InputDeviceListener {
+     @AnyThread
+     public String[] getKeyboardLayoutOverlay(InputDeviceIdentifier identifier, String languageTag,
+             String layoutType) {
++        if (mContext.getResources().getBoolean(
++                R.bool.config_builtInKeyboardKeepsOwnCharacterMap)) {
++            final InputDevice device = getInputDevice(identifier);
++            if (device != null && !device.isExternal()) {
++                return null;
++            }
++        }
+         String keyboardLayoutDescriptor;
+         synchronized (mImeInfoLock) {
+             KeyboardLayoutSelectionResult result = getKeyboardLayoutForInputDeviceInternal(
