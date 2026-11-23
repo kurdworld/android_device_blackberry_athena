@@ -56,6 +56,8 @@ adds or changes on top of the LineageOS baseline.
 - Moving a video on screen no longer stalls playback for about 2 s.
 - Background blur is available behind Quick Settings, the notification shade and recents; it can be turned off in Settings > Accessibility > Color and motion.
 - The sdm660 display `soong_namespace` is restored after a source sync, so release builds no longer fail when `vendor/blackberry/sdm660-common` imports it.
+- The missing `qtidisplay_defaults_headless` definition used by the sm8850/sm8750 snapalloc modules is provided, so Soong analysis no longer fails after a source sync.
+- The `livedisplay_sdm` `select()` branches use quoted string values, so Soong analysis no longer fails on bool branch types.
 
 ### Performance
 - Pressing Recents or opening Quick Settings now starts at a boosted CPU frequency instead of ramping up from idle, matching the CalyxOS input boost.
@@ -115,7 +117,7 @@ adds or changes on top of the LineageOS baseline.
 - `mq-deadline` with 128 KB read-ahead after boot reduces Settings scrolling jank.
 
 ### Updater
-- System update > Recent changes opens the `lineageos_ota` repository's styled `changelog.html` changelog at `https://github.com/kurdworld/lineageos_ota/blob/main/changelog.html` instead of the generic download.lineageos.org device changes page.
+- System update > Recent changes opens the rendered Markdown `changelog.md` in the `lineageos_ota` repository at `https://github.com/kurdworld/lineageos_ota/blob/main/changelog.md` instead of the generic download.lineageos.org device changes page.
 
 ### Security and certification
 - Builds are signed with dedicated kurdworld/LineageOS release keys. Private keys live only in the owner-only `$HOME/.lineageos-keys` store and are linked locally as `vendor/lineage-priv/keys`; AOSP test keys, development keys and keys from other projects are not used.

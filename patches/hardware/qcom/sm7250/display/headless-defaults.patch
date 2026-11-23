@@ -1,0 +1,15 @@
+diff --git a/Android.bp b/Android.bp
+index 8e7c3d23..92c40b12 100644
+--- a/Android.bp
++++ b/Android.bp
+@@ -97,6 +97,10 @@ qtidisplay_cc_defaults {
+     },
+ }
+ 
++cc_defaults {
++    name: "qtidisplay_defaults_headless",
++}
++
+ cc_library_headers {
+     name: "display_debug_headers",
+     vendor: true,

@@ -55,6 +55,8 @@ project folder.
 | `frameworks/base` | `voip-call-media-pause` | Music continuing over the car's Bluetooth call audio during a VoIP call such as WhatsApp: media playback is paused when the audio mode changes to call or in-communication, and the paused session resumes when the call ends |
 | `frameworks/hardware/interfaces` | `displayservice-hal` | Flashlight and camera (display service interface the camera HAL needs) |
 | `hardware/qcom-caf/sdm660` | `soong-namespace` | Re-declares the `soong_namespace` imports that the removed manifest linkfile used to provide at this path, so `vendor/blackberry/sdm660-common` can import the namespace after a repo sync |
+| `hardware/lineage/interfaces` | `livedisplay-select-string-branches` | Soong rejecting the `livedisplay_sdm` `select()` branches because the settings are strings but the branches used unquoted `false`; the branches are now quoted strings |
+| `hardware/qcom/sm7250/display` | `headless-defaults` | Undefined `qtidisplay_defaults_headless` module referenced by the sm8850/sm8750 snapalloc `Android.bp` files after a source sync; defines it as an empty `cc_defaults` in the sm7250 display namespace |
 | `frameworks/native` | `key-remap-physical-keyboard` | Key remapping being ignored for non-alphabetic physical keyboards such as the Convenience key (gpio-keys); remaps now apply to every physical keyboard |
 | `frameworks/native` | `keyboard-touchpad` | Keyboard touch surface handled as a touchpad instead of taps on the screen; keeps the KEY2 character map when a keyboard layout overlay is set |
 | `frameworks/opt/telephony` | `no-radio-config-wait` | Settings freezing for 2 s on pages that query the radio |
@@ -68,7 +70,7 @@ project folder.
 | `packages/apps/Settings` | `double-tap-power-custom-app` | Replacing the Wallet target of System > Gestures > Double press power button with a Custom app target that opens an icon app picker matching System > Buttons |
 | `packages/apps/Settings` | `expressive-settings-spacing` | The top-level Settings items using the expressive design taking too much vertical space: 64dp minimum height and 10dp vertical text padding instead of 72dp/16dp |
 | `packages/apps/Settings` | `physical-keyboard-settings` | Physical keyboard layout override in Settings > Keyboard; the Sym, Function and Convenience key actions now live in System > Buttons |
-| `packages/apps/Updater` | `updater-changelog-url` | System update > Recent changes opens the styled `lineageos_ota` repository `changelog.html` (https://github.com/kurdworld/lineageos_ota/blob/main/changelog.html) instead of the generic download.lineageos.org device changes page |
+| `packages/apps/Updater` | `updater-changelog-url` | System update > Recent changes opens the rendered Markdown `changelog.md` in the `lineageos_ota` repository (https://github.com/kurdworld/lineageos_ota/blob/main/changelog.md) instead of the generic download.lineageos.org device changes page |
 | `packages/inputmethods/LatinIME` | `0001-fix-german-qwertz` | German QWERTZ subtype missing from the keyboard picker |
 | `system/sepolicy` | `releasekey-for-mac-permissions` | Release builds failing because SELinux `mac_permissions.xml` generation looked for `testkey.x509.pem` next to the private release keys; it now uses `releasekey.x509.pem` |
 | `system/tools/hidl` | `allow-displayservice` | Flashlight and camera (allows the display service interface; pairs with `displayservice-hal`) |
