@@ -114,7 +114,7 @@ adds or changes on top of the LineageOS baseline.
 - `mq-deadline` with 128 KB read-ahead after boot reduces Settings scrolling jank.
 
 ### Updater
-- System update > Recent changes opens the `lineageos_ota` repository's styled `README.html` changelog at `https://kurdworld.github.io/lineageos_ota/README.html` instead of the generic download.lineageos.org device changes page.
+- System update > Recent changes opens the `lineageos_ota` repository's styled `changelog.html` changelog at `https://github.com/kurdworld/lineageos_ota/blob/main/changelog.html` instead of the generic download.lineageos.org device changes page.
 
 ### Security and certification
 - Builds are signed with dedicated kurdworld/LineageOS release keys. Private keys live only in the owner-only `$HOME/.lineageos-keys` store and are linked locally as `vendor/lineage-priv/keys`; AOSP test keys, development keys and keys from other projects are not used.

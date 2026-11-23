@@ -28,7 +28,7 @@ index df56e15..bb948db 100644
      <string name="menu_delete_update">Delete</string>
      <string name="menu_export_update">Export update</string>
 -    <string name="menu_changelog_url" translatable="false">https://download.lineageos.org/<xliff:g id="device_name">%1$s</xliff:g>/changes</string>
-+    <string name="menu_changelog_url" translatable="false">https://kurdworld.github.io/lineageos_ota/README.html</string>
++    <string name="menu_changelog_url" translatable="false">https://github.com/kurdworld/lineageos_ota/blob/main/changelog.html</string>
      <string name="menu_view_downloads">View on <xliff:g id="brand_name" example="LineageOS">%1$s</xliff:g> Downloads</string>
      <string name="menu_metered_network_warning">Metered network warning</string>
      <string name="menu_metered_network_warning_summary">Warn before downloading over mobile data</string>

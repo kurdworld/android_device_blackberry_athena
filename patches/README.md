@@ -67,7 +67,7 @@ project folder.
 | `packages/apps/Settings` | `double-tap-power-custom-app` | Replacing the Wallet target of System > Gestures > Double press power button with a Custom app target that opens an icon app picker matching System > Buttons |
 | `packages/apps/Settings` | `expressive-settings-spacing` | The top-level Settings items using the expressive design taking too much vertical space: 64dp minimum height and 10dp vertical text padding instead of 72dp/16dp |
 | `packages/apps/Settings` | `physical-keyboard-settings` | Physical keyboard layout override in Settings > Keyboard; the Sym, Function and Convenience key actions now live in System > Buttons |
-| `packages/apps/Updater` | `updater-changelog-url` | System update > Recent changes opens the styled `lineageos_ota` repository `README.html` (https://kurdworld.github.io/lineageos_ota/README.html) instead of the generic download.lineageos.org device changes page |
+| `packages/apps/Updater` | `updater-changelog-url` | System update > Recent changes opens the styled `lineageos_ota` repository `changelog.html` (https://github.com/kurdworld/lineageos_ota/blob/main/changelog.html) instead of the generic download.lineageos.org device changes page |
 | `packages/inputmethods/LatinIME` | `0001-fix-german-qwertz` | German QWERTZ subtype missing from the keyboard picker |
 | `system/sepolicy` | `releasekey-for-mac-permissions` | Release builds failing because SELinux `mac_permissions.xml` generation looked for `testkey.x509.pem` next to the private release keys; it now uses `releasekey.x509.pem` |
 | `system/tools/hidl` | `allow-displayservice` | Flashlight and camera (allows the display service interface; pairs with `displayservice-hal`) |
