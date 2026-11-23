@@ -55,6 +55,7 @@ adds or changes on top of the LineageOS baseline.
 - The virtual navigation bar no longer flashes during boot.
 - Moving a video on screen no longer stalls playback for about 2 s.
 - Background blur is available behind Quick Settings, the notification shade and recents; it can be turned off in Settings > Accessibility > Color and motion.
+- The sdm660 display `soong_namespace` is restored after a source sync, so release builds no longer fail when `vendor/blackberry/sdm660-common` imports it.
 
 ### Performance
 - Pressing Recents or opening Quick Settings now starts at a boosted CPU frequency instead of ramping up from idle, matching the CalyxOS input boost.

@@ -1,0 +1,15 @@
+diff --git a/Android.bp b/Android.bp
+index c285273734..2037842aa4 100644
+--- a/Android.bp
++++ b/Android.bp
+@@ -1,3 +1,10 @@
++soong_namespace {
++    imports: [
++        "vendor/qcom/opensource/commonsys-intf/display",
++        "vendor/qcom/opensource/display",
++    ],
++}
++
+ cc_defaults {
+     name: "display_defaults",
+     cflags: [

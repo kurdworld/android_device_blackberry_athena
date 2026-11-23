@@ -54,6 +54,7 @@ project folder.
 | `frameworks/base` | `hardware-keys-custom-app` | System > Buttons "Custom app" action launching the app chosen for that specific button trigger |
 | `frameworks/base` | `voip-call-media-pause` | Music continuing over the car's Bluetooth call audio during a VoIP call such as WhatsApp: media playback is paused when the audio mode changes to call or in-communication, and the paused session resumes when the call ends |
 | `frameworks/hardware/interfaces` | `displayservice-hal` | Flashlight and camera (display service interface the camera HAL needs) |
+| `hardware/qcom-caf/sdm660` | `soong-namespace` | Re-declares the `soong_namespace` imports that the removed manifest linkfile used to provide at this path, so `vendor/blackberry/sdm660-common` can import the namespace after a repo sync |
 | `frameworks/native` | `key-remap-physical-keyboard` | Key remapping being ignored for non-alphabetic physical keyboards such as the Convenience key (gpio-keys); remaps now apply to every physical keyboard |
 | `frameworks/native` | `keyboard-touchpad` | Keyboard touch surface handled as a touchpad instead of taps on the screen; keeps the KEY2 character map when a keyboard layout overlay is set |
 | `frameworks/opt/telephony` | `no-radio-config-wait` | Settings freezing for 2 s on pages that query the radio |
@@ -78,7 +79,6 @@ project folder.
 | CalyxOS patch | Reason |
 |---|---|
 | `frameworks/base/blackberry-keyboard-and-hardware` | LineageOS already has most of it (volume wake, Home/Menu/App switch actions, partial screenshot, `FLAG_LONG_SWIPE`); the remaining BlackBerry-specific parts need a hand-written LineageOS port, not a straight apply. The PIN-entry, PIN-bouncer queue, IME-switcher, biometric-haptic and notification-LED-preview parts are carried over as separate patches; the keyboard touchpad part is not |
-| `hardware/qcom-caf/sdm660/display-namespace-imports` | LineageOS' `hardware/qcom-caf/sdm660/Android.bp` already declares the same `soong_namespace` imports |
 | `calyx-sdk/open-app-action` | CalyxOS SDK only, no LineageOS counterpart |
 | `packages/apps/CalyxParts/hardware-key-options` | CalyxParts only; LineageParts would need a separate port |
 | `packages/apps/Updater/download-url` | CalyxOS update server only |
